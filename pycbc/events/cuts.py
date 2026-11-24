@@ -76,30 +76,35 @@ def insert_cuts_option_group(parser):
     """
     Add options to the parser for cuts to the templates/triggers
     """
-    parser.add_argument("--trigger-cuts", nargs="+",
-                        help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE1:LIMIT1, or as "
-                             "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2,"
-                             "where, PARAMETER is the parameter to be cut, "
-                             "VALUE1, and VALUE2 (when provided), are the "
-                             "values at which it is cut, and LIMIT1, and "
-                             "LIMIT2 (when provided with VALUE2, must be "
-                             "opposite in nature to each other) are one of \""
-                             + "\", \"".join(ineq_choices) +
-                             "\" to indicate the inequality needed. "
-                             "PARAMETER is one of:\""
-                             + "\", \"".join(trigger_param_choices) +
-                             "\". For example snr:6:LOWER removes triggers "
-                             "with matched filter SNR < 6 or "
-                             "snr:6:LOWER:4:UPPER removes triggers with "
-                             "SNR < 6 and SNR > 4")
-    parser.add_argument("--template-cuts", nargs="+",
-                        help="Cuts to apply to the triggers, supplied as "
-                             "PARAMETER:VALUE1:LIMIT1 or as "
-                             "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2. "
-                             "Format is the same as in --trigger-cuts. "
-                             "PARAMETER can be one of \""
-                             + "\", \"".join(template_param_choices) + "\".")
+    parser.add_argument(
+        "--trigger-cuts",
+        nargs="+",
+        help="Cuts to apply to the triggers, supplied as "
+        "PARAMETER:VALUE1:LIMIT1, or as "
+        "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2,"
+        "where, PARAMETER is the parameter to be cut, "
+        "VALUE1, and VALUE2 (when provided), are the "
+        "values at which it is cut, and LIMIT1, and "
+        "LIMIT2 (when provided with VALUE2, must be "
+        'opposite in nature to each other) are one of "'
+        + '", "'.join(ineq_choices)
+        + '" to indicate the inequality needed. '
+        'PARAMETER is one of:"'
+        + '", "'.join(trigger_param_choices)
+        + '". For example snr:6:LOWER removes triggers '
+        "with matched filter SNR < 6 or "
+        "snr:6:LOWER:4:UPPER removes triggers with "
+        "SNR < 6 and SNR > 4",
+    )
+    parser.add_argument(
+        "--template-cuts",
+        nargs="+",
+        help="Cuts to apply to the triggers, supplied as "
+        "PARAMETER:VALUE1:LIMIT1 or as "
+        "PARAMETER:VALUE1:LIMIT1:VALUE2:LIMIT2. "
+        "Format is the same as in --trigger-cuts. "
+        'PARAMETER can be one of "' + '", "'.join(template_param_choices) + '".',
+    )
 
 
 def convert_inputstr(inputstr, choices):
@@ -115,10 +120,14 @@ def convert_inputstr(inputstr, choices):
         cut_value2_str, cut_limit2 = None, None
     elif len(splitstr) == 5:
         cut_param, cut_value1_str, cut_limit1, cut_value2_str, cut_limit2 = splitstr
-        if not (("lower" in cut_limit1 and "upper" in cut_limit2) or
-                ("upper" in cut_limit1 and "lower" in cut_limit2)):
-            raise NotImplementedError("If using two limits for the same cut, "
-                                        "the limits must be opposite in nature")
+        if not (
+            ("lower" in cut_limit1 and "upper" in cut_limit2)
+            or ("upper" in cut_limit1 and "lower" in cut_limit2)
+        ):
+            raise NotImplementedError(
+                "If using two limits for the same cut, "
+                "the limits must be opposite in nature"
+            )
         else:
             # For ease of handling, let limit1 be always assigned lower*
             if "upper" in cut_limit1 and "lower" in cut_limit2:
@@ -132,39 +141,53 @@ def convert_inputstr(inputstr, choices):
         )
 
     if cut_param.lower() not in choices:
-        raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
-                                  "not recognised, choose from "
-                                  + ", ".join(choices))
+        raise NotImplementedError(
+            "Cut parameter " + cut_param.lower() + " "
+            "not recognised, choose from " + ", ".join(choices)
+        )
     if cut_limit1.lower() not in ineq_choices:
-        raise NotImplementedError("Cut inequality " + cut_limit1.lower() + " "
-                                  "not recognised, choose from "
-                                  + ", ".join(ineq_choices))
+        raise NotImplementedError(
+            "Cut inequality " + cut_limit1.lower() + " "
+            "not recognised, choose from " + ", ".join(ineq_choices)
+        )
     if cut_limit2 is not None and cut_limit2.lower() not in ineq_choices:
-        raise NotImplementedError("Cut inequality " + cut_limit2.lower() + " "
-                                  "not recognised, choose from "
-                                  + ", ".join(ineq_choices))
+        raise NotImplementedError(
+            "Cut inequality " + cut_limit2.lower() + " "
+            "not recognised, choose from " + ", ".join(ineq_choices)
+        )
 
     cut_values = []
     for cut_value_str in (cut_value1_str, cut_value2_str):
         try:
-            cut_values.append(float(cut_value_str) if cut_value_str
-                                                            is not None else None)
+            cut_values.append(
+                float(cut_value_str) if cut_value_str is not None else None
+            )
         except ValueError as value_e:
-            logger.warning("ERROR: A cut value must be convertible into a float, "
-                           "got \"%s\".", cut_value_str)
+            logger.warning(
+                'ERROR: A cut value must be convertible into a float, got "%s".',
+                cut_value_str,
+            )
             raise value_e
     cut_value1, cut_value2 = cut_values
 
     if cut_value2_str is None:
         return {(cut_param, ineq_functions[cut_limit1]): cut_value1}
-    else:
-        if cut_value2 < cut_value1:
-            return {(cut_param, ineq_functions[cut_limit1],
-                    ineq_functions[cut_limit2]): (cut_value1, cut_value2)}
-        raise NotImplementedError("When two limits are provided, the threshold VALUE "
-                                  "for the upper* limit must be less than that of "
-                                  "the lower* limit; the provided values: "
-                                  + str(cut_value2) + " >= " + str(cut_value1))
+    if cut_value2 < cut_value1:
+        return {
+            (cut_param, ineq_functions[cut_limit1], ineq_functions[cut_limit2]): (
+                cut_value1,
+                cut_value2,
+            )
+        }
+    raise NotImplementedError(
+        "When two limits are provided, the threshold VALUE "
+        "for the upper* limit must be less than that of "
+        "the lower* limit; the provided values: "
+        + str(cut_value2)
+        + " >= "
+        + str(cut_value1)
+    )
+
 
 def check_update_cuts(cut_dict, new_cut):
     """
@@ -278,7 +301,7 @@ def sigma_multiple_cut_thresh(template_ids, statistic, cut_thresh, ifo):
     statistic_classname = statistic.__class__.__name__
     if not hasattr(statistic, "fits_by_tid"):
         raise ValueError(
-            "Cut parameter \"sigma_muliple\" cannot "
+            'Cut parameter "sigma_muliple" cannot '
             "be used when the ranking statistic "
             + statistic_classname
             + " does not use "
@@ -340,17 +363,15 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
                 # depending on the template ID, so we rewrite cut_thresh
                 # as a value for each trigger, numpy comparison functions
                 # allow this
-                cut_thresh1 = sigma_multiple_cut_thresh(triggers.template_num,
-                                                       statistic,
-                                                       cut_thresh1,
-                                                       triggers.ifo)
+                cut_thresh1 = sigma_multiple_cut_thresh(
+                    triggers.template_num, statistic, cut_thresh1, triggers.ifo
+                )
                 if cut_function2 is not None:
-                    cut_thresh2 = sigma_multiple_cut_thresh(triggers.template_num,
-                                                           statistic,
-                                                           cut_thresh2,
-                                                           triggers.ifo)
+                    cut_thresh2 = sigma_multiple_cut_thresh(
+                        triggers.template_num, statistic, cut_thresh2, triggers.ifo
+                    )
             else:
-                err_msg = "Cuts on \"sigma_multiple\" are only implemented for "
+                err_msg = 'Cuts on "sigma_multiple" are only implemented for '
                 err_msg += "triggers in a ReadByTemplate format. This code "
                 err_msg += f"uses a {type(triggers).__name__} format."
                 raise NotImplementedError(err_msg)
@@ -369,7 +390,7 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
             value = value[idx_out]
         else:
             raise NotImplementedError(
-                "Parameter \"" + parameter + "\" not "
+                'Parameter "' + parameter + '" not '
                 "recognised. Input sanitisation means "
                 "this shouldn't have happened?!"
             )
@@ -533,17 +554,17 @@ def apply_template_cuts(
 
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
-                mask = apply_template_fit_cut(statistic,
-                                                  ifos,
-                                                  (parameter, cut_function1),
-                                                  cut_thresh1,
-                                                  tids_out)
+                mask = apply_template_fit_cut(
+                    statistic, ifos, (parameter, cut_function1), cut_thresh1, tids_out
+                )
                 if cut_function2 is not None:
-                    mask |= apply_template_fit_cut(statistic,
-                                                    ifos,
-                                                    (parameter, cut_function2),
-                                                    cut_thresh2,
-                                                    tids_out)
+                    mask |= apply_template_fit_cut(
+                        statistic,
+                        ifos,
+                        (parameter, cut_function2),
+                        cut_thresh2,
+                        tids_out,
+                    )
                 tids_out = tids_out[mask]
         else:
             raise ValueError(
