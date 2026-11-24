@@ -201,8 +201,14 @@ parser.add_argument(
     help="hdf5 file(s) containing fit coefficients for each "
     "individual template. Can smooth over multiple "
     "files provided they correspond to the same bank "
-    "and fitting settings. Required",
+    "and fitting settings. Required; should be veto-removed "
+    "when template-fit-file-veto-times-only is provided",
 )
+parser.add_argument(
+    "--template-fit-file-veto-times-only",
+    nargs="+",
+    help="hdf5 file(s) containing fit coefficients for each "
+    "individual template during veto-times only. Optional")
 parser.add_argument(
     "--bank-file",
     required=True,
@@ -301,6 +307,9 @@ for inputstr in smooth_kwargs:
         raise ValueError(err_txt)
 
 assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
+
+if args.template_fit_file_veto_times_only is not None:
+    assert len(args.template_fit_file) == len(args.template_fit_file_veto_times_only)
 
 init_logging(args.verbose)
 
@@ -466,6 +475,154 @@ rang = numpy.arange(0, num_templates)
 # smoothed_vals[:,2] is the total number of triggers in the template
 smoothed_vals = numpy.zeros((num_templates, 3))
 
+if args.template_fit_file_veto_times_only is not None:
+    analysis_time_veto = 0
+    attr_dict_veto = {}
+
+    # These end up as n_files * num_templates arrays
+    tid_veto = numpy.array([], dtype=int)
+    nabove_veto = numpy.array([], dtype=int)
+    ntotal_veto = numpy.array([], dtype=int)
+    alpha_veto = numpy.array([], dtype=float)
+    median_sigma_veto = numpy.array([], dtype=float)
+
+    logger.info("Loading input template fits on veto-times")
+
+    # Check on fit files on veto-times having the same number of templates, as expected if
+    # they use the same bank, if provided
+    num_templates = None
+    for filename in args.template_fit_file_veto_times_only:
+        with HFile(filename, "r") as fits_veto:
+            if num_templates is None:
+                num_templates = fits_veto["template_id"].size
+            elif num_templates != fits_veto["template_id"].size:
+                raise RuntimeError(
+                    "Input fit files correspond to different banks. "
+                    "This situation is not yet supported."
+                )
+            # get attributes from the template-level fit
+            for k in fits_veto.attrs:
+                if k == "analysis_time":
+                    # For this attribute only, we want the mean
+                    analysis_time_veto += fits_veto.attrs["analysis_time"]
+                    continue
+                if k not in attr_dict_veto:
+                    # It's the first time we encounter this attribute
+                    attr_dict_veto[k] = fits_veto.attrs[k]
+                elif k == "ifo":
+                    # We don't mind if this attribute is different, however the
+                    # output attributes will only correspond to the first file's
+                    # IFO. Warn if different IFOs are being used.
+                    if attr_dict_veto[k] != fits_veto.attrs[k]:
+                        logger.warning(
+                            "Fit files correspond to different IFOs: %s and %s, "
+                            "only %s is being used for output file attributes",
+                            attr_dict_veto[k],
+                            fits_veto.attrs[k],
+                            attr_dict_veto[k],
+                        )
+                    continue
+                elif attr_dict_veto[k] != fits_veto.attrs[k]:
+                    # Check that the files are consistent with one another
+                    err_msg = f"Input files are not consistent, file {filename} "
+                    err_msg += f"has attribute {k} of {fits_veto.attrs[k]}, whereas "
+                    err_msg += f"previous files have value {attr_dict_veto[k]}"
+                    raise RuntimeError(err_msg)
+
+            # get template id and template parameter values
+            tid_veto = numpy.concatenate((tid_veto, fits_veto["template_id"][:]))
+            nabove_veto = numpy.concatenate((nabove_veto, fits_veto["count_above_thresh"][:]))
+            ntotal_veto = numpy.concatenate((ntotal_veto, fits_veto["count_in_template"][:]))
+            alpha_veto = numpy.concatenate((alpha_veto, fits_veto["fit_coeff"][:]))
+            try:
+                median_sigma_veto = numpy.concatenate((median_sigma_veto, fits_veto["median_sigma"][:]))
+            except KeyError:
+                logger.info("Median_sigma dataset not present in input file")
+                median_sigma_veto = None
+
+    # For an exponential fit 1/alpha is linear in the trigger statistic values
+    # so calculating weighted sums or averages of 1/alpha is appropriate
+
+    invalpha_veto = 1.0 / alpha_veto
+    invalphan_veto = invalpha_veto * nabove_veto
+
+    # convert the sum above into a mean
+    analysis_time_veto /= len(args.template_fit_file_veto_times_only)
+
+    nabove_rate = nabove / analysis_time
+    nabove_veto_rate = nabove_veto / analysis_time_veto
+    iidx = nabove_rate >= nabove_veto_rate
+
+    invalpha_veto[iidx] = invalpha[iidx]
+    nabove_veto[iidx] = nabove[iidx] * analysis_time_veto / analysis_time
+
+    if len(args.template_fit_file_veto_times_only) > 1:
+        # From the num_templates * n_files arrays, average within each template.
+        # To do this, we average the n_files occurrences which have the same tid
+
+        # The linearity of the average means that we can do this in two steps
+        # without biasing the final result.
+        logger.info("Averaging within the same template for multiple files")
+        tid_veto_unique = numpy.unique(tid_veto)
+
+        # sort into template_id order
+        tidsort_veto = tid_veto.argsort()
+
+        # For each unique template id, find the range of identical template ids
+        left_veto = numpy.searchsorted(tid_veto[tidsort_veto], tid_unique_veto, side="left")
+        right_veto = numpy.searchsorted(tid_veto[tidsort_veto], tid_unique_veto, side="right") - 1
+
+        # Precompute the sums so we can quickly look up differences
+        nasum_veto = nabove_veto[tidsort_veto].cumsum()
+        invsum_veto = invalphan_veto[tidsort_veto].cumsum()
+        ntsum_veto = ntotal_veto[tidsort_veto].cumsum()
+        num_veto = right_veto - left_veto
+
+        tid_veto = tid_veto_unique
+        nabove_veto = (nasum_veto[right_veto] - nasum_veto[left_veto]) / num_veto
+        invalphan_veto = (invsum_veto[right_veto] - invsum_veto[left_veto]) / num_veto
+        ntotal_veto = (ntsum_veto[right_veto] - ntsum_veto[left_veto]) / num_veto
+        if median_sigma_veto is not None:
+            # Median sigma is a special one - we need to make sure that
+            # we do not mess things up when nan values are given, so we
+            # can't use the special cumsum fast option
+            median_sigma_veto = [
+                numpy.nanmean(median_sigma_veto[tidsort_veto[start:end]])
+                for start, end in zip(left_veto, right_veto, strict=True)
+            ]
+
+    if args.output_fits_by_template:
+        # Store fit_by_template values for output file
+        # For more than one input fit file, these values are averaged over the same
+        # template in different files
+        fbt_dict_veto = {
+            "count_above_thresh": nabove_veto,
+            "count_in_template": ntotal_veto,
+        }
+        with numpy.errstate(invalid="ignore"):
+            # If n_above is zero, then we'll get an 'invalid' warning as we
+            # are dividing zero by zero. This is normal, and we'll deal with
+            # those properly just below, so ignore this so people don't see
+            # a warning and panic
+            alpha_veto = nabove_veto / invalphan_veto
+        alpha_veto[nabove_veto == 0] = -100
+        fbt_dict_veto["fit_coeff"] = alpha_veto
+
+    if args.smoothing_method == "n_closest" and n_required > nabove.sum():
+        logger.warning(
+            "There are %.2f triggers above threshold, not enough to give a "
+            "total of %d for smoothing",
+            nabove_veto.sum(),
+            n_required,
+        )
+
+    # Preallocate memory for smoothing results
+    # smoothed_vals is an array containing smoothed template fit values :
+    # smoothed_vals[:,0] is the number of triggers above the fit threshold
+    # smoothed_vals[:,1] is the fit coefficient 'alpha'
+    # smoothed_vals[:,2] is the total number of triggers in the template
+    smoothed_vals_veto = numpy.zeros((num_templates, 3))
+
 # Handle the one-dimensional case of tophat smoothing separately
 # as it is easier to optimize computational performance.
 if len(parvals) == 1 and args.smoothing_method == "smooth_tophat":
@@ -494,6 +651,17 @@ if len(parvals) == 1 and args.smoothing_method == "smooth_tophat":
     invmean = (invsum[right] - invsum[left]) / num
     smoothed_vals[:, 1] = smoothed_vals[:, 0] / invmean
     smoothed_vals[:, 2] = (ntsum[right] - ntsum[left]) / num
+
+    if args.template_fit_file_veto_times_only is not None:
+        nasum_veto = nabove_veto.cumsum()
+        invsum_veto = invalphan_veto.cumsum()
+        ntsum_veto = ntotal_veto.cumsum()
+
+        logger.info("Smoothing ...")
+        smoothed_vals_veto[:, 0] = (nasum_veto[right] - nasum_veto[left]) / num
+        invmean_veto = (invsum_veto[right] - invsum_veto[left]) / num
+        smoothed_vals_veto[:, 1] = smoothed_vals[:, 0] / invmean_veto
+        smoothed_vals_veto[:, 2] = (ntsum_veto[right] - ntsum_veto[left]) / num
 
 elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     c = _smooth_cut[args.smoothing_method]
@@ -548,6 +716,28 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     parvals = [p[unsort] for p in parvals]
     smoothed_vals = smoothed_vals[unsort, :]
 
+    if args.template_fit_file_veto_times_only is not None:
+        nabove_veto_sort = nabove_veto[par_sort]
+        invalphan_veto_sort = invalphan_veto[par_sort]
+        ntotal_veto_sort = ntotal_veto[par_sort]
+        slices = [slice(start, end) for start, end in zip(lefts, rights, strict=True)]
+        for i in rang:
+            report_percentage(i, num_templates)
+            slc = slices[i]
+            d = dist(i, slc, parvals, args.smoothing_width)
+
+            smoothed_vals_veto[i, :] = smooth(
+                nabove_veto_sort[slc],
+                invalphan_veto_sort[slc],
+                ntotal_veto_sort[slc],
+                d,
+                args.smoothing_method,
+                **kwarg_dict,
+            )
+
+        # Undo the sorts
+        smoothed_vals_veto = smoothed_vals_veto[unsort, :]
+
 else:
     logger.info("Smoothing ...")
     for i in rang:
@@ -556,6 +746,10 @@ else:
         smoothed_vals[i, :] = smooth(
             nabove, invalphan, ntotal, d, args.smoothing_method, **kwarg_dict
         )
+        if args.template_fit_file_veto_times_only is not None:
+            smoothed_vals_veto[i, :] = smooth(
+                nabove_veto, invalphan_veto, ntotal_veto, d, args.smoothing_method, **kwarg_dict
+            )
 
 logger.info("Writing output")
 outfile = HFile(args.output, "w")
@@ -572,17 +766,49 @@ for param, vals, slog in zip(args.fit_param, parvals, args.log_param, strict=Tru
     elif slog in ["true", "True", "TRUE"]:
         outfile[param] = numpy.exp(vals)
 
+if args.template_fit_file_veto_times_only is not None:
+    outfile.create_group("dq_state_0")
+    outfile.create_group("dq_state_1")
+    outfile["dq_state_0"]["count_above_thresh"] = smoothed_vals[:, 0]
+    outfile["dq_state_0"]["fit_coeff"] = smoothed_vals[:, 1]
+    outfile["dq_state_0"]["count_in_template"] = smoothed_vals[:, 2]
+    if median_sigma is not None:
+        outfile["dq_state_0"]["median_sigma"] = median_sigma
+    outfile["dq_state_1"]["count_above_thresh"] = smoothed_vals_veto[:, 0]
+    outfile["dq_state_1"]["fit_coeff"] = smoothed_vals_veto[:, 1]
+    outfile["dq_state_1"]["count_in_template"] = smoothed_vals_veto[:, 2]
+    if median_sigma_veto is not None:
+        outfile["dq_state_1"]["median_sigma"] = median_sigma_veto
+
 if args.output_fits_by_template:
     fbt_group = outfile.create_group("fit_by_template")
     for k, v in fbt_dict.items():
         fbt_group[k] = v
+    if args.template_fit_file_veto_times_only is not None:
+        for dq_state in ["dq_state_0", "dq_state_1"]:
+            fbt_group = outfile[dq_state].create_group("fit_by_template")
+            for k, v in fbt_dict.items():
+                fbt_group[k] = v
 
 # Add metadata, some is inherited from template level fit
 for k, v in attr_dict.items():
     outfile.attrs[k] = v
+if args.template_fit_file_veto_times_only is not None:
+    for k, v in attr_dict.items():
+        outfile["dq_state_0"].attrs[k] = v
+    for k, v in attr_dict_veto.items():
+        outfile["dq_state_1"].attrs[k] = v
 if analysis_time != 0:
     outfile.attrs["analysis_time"] = analysis_time
 
+if args.template_fit_file_veto_times_only is not None:
+    if analysis_time != 0:
+        outfile["dq_state_0"].attrs["analysis_time"] = analysis_time
+    if analysis_time_veto != 0:
+        outfile["dq_state_1"].attrs["analysis_time"] = analysis_time_veto
 # Add a magic file attribute so that coinc_findtrigs can parse it
 outfile.attrs["stat"] = attr_dict["ifo"] + "-fit_coeffs"
+if args.template_fit_file_veto_times_only is not None:
+    outfile["dq_state_0"].attrs["stat"] = attr_dict["ifo"] + "-fit_coeffs"
+    outfile["dq_state_1"].attrs["stat"] = attr_dict_veto["ifo"] + "-fit_coeffs"
 logger.info("Done!")
