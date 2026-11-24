@@ -23,20 +23,21 @@ Set up qscans and SNR timeseries plots of loudest triggers/missed injections
 # =============================================================================
 # Preamble
 # =============================================================================
-import os
 import argparse
 import logging
+import os
 
 from igwn_segments import segmentlist
-import pycbc.workflow as wf
-from pycbc.workflow.core import FileList, resolve_url_to_file
-import pycbc.workflow.minifollowups as mini
-import pycbc.version
+
 import pycbc.events
 import pycbc.results.pygrb_postprocessing_utils as ppu
-from pycbc.results import layout
-from pycbc.workflow.plotting import PlotExecutable
+import pycbc.version
+import pycbc.workflow as wf
+import pycbc.workflow.minifollowups as mini
 from pycbc.io.hdf import HFile
+from pycbc.results import layout
+from pycbc.workflow.core import FileList, resolve_url_to_file
+from pycbc.workflow.plotting import PlotExecutable
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg

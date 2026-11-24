@@ -20,21 +20,22 @@
 Make workflow for the archival, targeted, coherent inspiral pipeline.
 """
 
-import sys
-import os
 import argparse
 import logging
+import os
+import sys
+
 import matplotlib
+
 matplotlib.use('agg')
 
 from igwn_segments import segment, segmentlist, segmentlistdict
 
-from pycbc import init_logging, add_common_pycbc_options
-from pycbc.events.veto import select_segments_by_definer
 import pycbc.workflow as _workflow
-from pycbc.workflow.core import configparser_value_to_file, FileList, SegFile
+from pycbc import add_common_pycbc_options, init_logging
+from pycbc.events.veto import select_segments_by_definer
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
-
+from pycbc.workflow.core import FileList, SegFile, configparser_value_to_file
 from pycbc.workflow.injection import compute_inj_optimal_snr
 from pycbc.workflow.psd import make_psd_file
 
