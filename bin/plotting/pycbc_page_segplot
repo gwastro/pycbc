@@ -147,7 +147,7 @@ for segment_file in opts.segment_files:
 
                 # put comment in caption
                 caption += ifo + ":" + segment_name
-                if comment_dict[key] != None:
+                if comment_dict[key] is not None:
                     caption += " (" + comment_dict[key] + ")"
                 caption += " "
 
@@ -165,8 +165,10 @@ for segment_file in opts.segment_files:
                 # plot segments
                 sub_line_collections = []
                 for s, e in zip(start, end, strict=True):
-                    l = ax.plot([s, e], [y, y], "-", lw=120, color=color, alpha=0.3)
-                    sub_line_collections += l
+                    plot_lines = ax.plot(
+                        [s, e], [y, y], "-", lw=120, color=color, alpha=0.3
+                    )
+                    sub_line_collections += plot_lines
 
                     # set HTML table string
                     label = f"""<table>
@@ -180,10 +182,10 @@ for segment_file in opts.segment_files:
                     # add tooltip for segment
                     if len(line_collections) < 1:
                         mpld3.plugins.connect(
-                            fig, mpld3.plugins.LineHTMLTooltip(l[0], label)
+                            fig, mpld3.plugins.LineHTMLTooltip(plot_lines[0], label)
                         )
                     else:
-                        mpld3.plugins.connect(fig, LineTooltip(l[0], label))
+                        mpld3.plugins.connect(fig, LineTooltip(plot_lines[0], label))
 
                 # add name to list
                 names += [ifo + ":" + segment_name]

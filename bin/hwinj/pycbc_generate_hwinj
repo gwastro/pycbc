@@ -366,7 +366,7 @@ f_high = opts.high_frequency_cutoff or int(sample_rate / 2)
 # check that frame types are not lists
 if opts.frame_type:
     for key, value in opts.frame_type.items():
-        if type(opts.frame_type[key]) == list:
+        if type(opts.frame_type[key]) is list:
             opts.frame_type[key] = value[0]
 
 # set an initial distance to generate waveform

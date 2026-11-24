@@ -32,14 +32,11 @@ import unittest
 import numpy
 from utils import parse_args_all_schemes, simple_exit
 
-from pycbc.types import Array, complex64, float32, zeros
-
-_scheme, _context = parse_args_all_schemes("correlate")
-
 from pycbc.catalog import Merger
 from pycbc.filter import matched_filter_core, resample_to_delta_t, sigma
 from pycbc.noise import noise_from_psd
 from pycbc.psd import aLIGOZeroDetHighPower, interpolate, inverse_spectrum_truncation
+from pycbc.types import Array, complex64, float32, zeros
 from pycbc.vetoes import (
     SingleDetPowerChisq,
     chisq_accum_bin,
@@ -54,6 +51,8 @@ from pycbc.vetoes.chisq import (
 from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
 from pycbc.waveform import get_fd_waveform
 
+_scheme, _context = parse_args_all_schemes("correlate")
+
 trusted_accum = chisq_accum_bin_numpy
 
 
@@ -66,7 +65,7 @@ class TestChisq(unittest.TestCase):
         xi = numpy.random.uniform(low=-1, high=1.0, size=2**20)
         self.x = Array(xr + xi * 1.0j, dtype=complex64)
         self.z = zeros(2**20, dtype=float32)
-        for i in range(4):
+        for _ in range(4):
             trusted_accum(self.z, self.x)
 
         m = Merger("GW170814")
@@ -116,7 +115,7 @@ class TestChisq(unittest.TestCase):
     def test_accum(self):
         with self.context:
             z = zeros(2**20, dtype=float32)
-            for i in range(4):
+            for _ in range(4):
                 chisq_accum_bin(z, self.x)
             self.assertTrue(self.z.almost_equal_elem(z, self.tolerance))
 

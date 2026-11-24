@@ -79,7 +79,7 @@ def setup_psd_workflow(
     # Parse for options in ini file.
     try:
         psd_method = cp.get_opt_tags("workflow-psd", "psd-method", tags)
-    except:
+    except configparser.Error:
         # Predefined PSD sare optional, just return an empty list if not
         # provided.
         return FileList([])

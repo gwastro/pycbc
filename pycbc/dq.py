@@ -222,6 +222,7 @@ def query_flag(
             else [DEFAULT_GWOSC_URL]
         )
         fetched = False
+        last_err = None
         for gwosc_base in gwosc_bases:
             try:
                 url = (gwosc_base + GWOSC_TIMELINE_PATH).format(
@@ -238,11 +239,12 @@ def query_flag(
                     flag_segments = data["segments"]
                 fetched = True
                 break
-            except (OSError, ValueError) as exc:
+            except (OSError, ValueError) as err:
+                last_err = err
                 logger.warning(
                     "Failed to query GWOSC segments from %s: %s",
                     gwosc_base,
-                    exc,
+                    err,
                 )
 
         if not fetched:
@@ -250,7 +252,7 @@ def query_flag(
                 raise ValueError(
                     f"Unable to find {segment_name} segments in GWOSC, check "
                     "flag name or times"
-                )
+                ) from last_err
 
             return query_flag(
                 ifo,

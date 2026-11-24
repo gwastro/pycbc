@@ -176,7 +176,7 @@ easy_keys = [
 ]
 
 
-def complete_inj_data(injs, keys, tag, ifos=[]):
+def complete_inj_data(injs, keys, tag, ifos=()):
     """
     Create a dictionary containing the data specified by the
     list of keys extracted from an injection file

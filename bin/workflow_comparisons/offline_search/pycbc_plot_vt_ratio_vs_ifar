@@ -115,8 +115,8 @@ for n, key in zip(range(nkeys), keys, strict=True):
     ax = axs[n % nrows, n // nrows]
     ax.axhline(y=1.0, alpha=0.5, ls="--", color="k")
     ax.plot(xvals, ys, c="k")
-    (l,) = ax.plot(xvals, ys, c=c)
-    lines.append(l)
+    (line,) = ax.plot(xvals, ys, c=c)
+    lines.append(line)
     ax.fill_between(
         xvals,
         ys - yerr_errlow,

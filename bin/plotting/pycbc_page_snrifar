@@ -312,7 +312,7 @@ if not args.closed_box:
             # Since there is only one background bin we can just remove
             # hierarchically removed triggers from highest ranking statistic
             # to lower ranking statistic.
-            for i in range(h_inc_back_num):
+            for _ in range(h_inc_back_num):
                 rm_idx = cstat_fore.argmax()
                 cstat_fore_h_rm = numpy.append(cstat_fore_h_rm, cstat_fore[rm_idx])
                 cstat_rate_h_rm = numpy.append(cstat_rate_h_rm, cstat_rate[rm_idx])

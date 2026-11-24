@@ -2,8 +2,14 @@
 
 
 __prog__ = "pycbc_randr_by_snr"
-__author__ = "Collin Capano <collin.capano@ligo.org>, Miriam Cabero Mueller <miriam.cabero@ligo.org>"
-__description__ = "Resets the distance distribution in a sim_inspiral table based on desired SNR. The SNRs are chosen randomly from a given range."
+__author__ = (
+    "Collin Capano <collin.capano@ligo.org>, "
+    "Miriam Cabero Mueller <miriam.cabero@ligo.org>"
+)
+__description__ = (
+    "Resets the distance distribution in a sim_inspiral table based "
+    "on desired SNR. The SNRs are chosen randomly from a given range."
+)
 
 import logging
 import sys
@@ -143,15 +149,15 @@ if opts.distribution in ["volume", "distance", "logdist"]:
 elif opts.distribution.startswith("beta"):
     try:
         distribution, params = opts.distribution.split(":")
-    except ValueError:
+    except ValueError as err:
         raise ValueError(
             "beta distribution requires an a and b to be "
             "provided; e.g., 'beta:3,2'; see help"
-        )
+        ) from err
     try:
         alpha, beta = map(float, params.split(","))
-    except ValueError:
-        raise ValueError("beta distribution not formatted correctly; see help")
+    except ValueError as err:
+        raise ValueError("beta distribution not formatted correctly; see help") from err
 else:
     raise ValueError("unrecognized distribution; see help")
 

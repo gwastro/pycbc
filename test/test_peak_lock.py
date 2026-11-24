@@ -151,7 +151,7 @@ class TestPeakLockSearch(unittest.TestCase):
         model = self.model(mass_offset=0.01, peak_lock_snr=4.0)
         before = dict(model.tstart)
         model.update(**POINT)
-        model.loglr
+        _ = model.loglr
         for ifo in before:
             self.assertEqual(before[ifo], model.tstart[ifo])
 
@@ -198,11 +198,11 @@ class TestPeakLockSearch(unittest.TestCase):
         """
         model = self.model(mass_offset=0.01, peak_lock_snr=4.0, **SEARCH)
         model.update(**POINT)
-        model.loglr
+        _ = model.loglr
         first = dict(model.tstart)
         for _ in range(3):
             model.update(**POINT)
-            model.loglr
+            _ = model.loglr
         for ifo in first:
             self.assertAlmostEqual(first[ifo], model.tstart[ifo], places=9)
 
@@ -219,7 +219,7 @@ class TestPeakLockSearch(unittest.TestCase):
         model = self.model(peak_lock_snr=4.0, **SEARCH)
         before = dict(model.tstart)
         model.update(**POINT)
-        model.loglr
+        _ = model.loglr
         for ifo in before:
             self.assertLessEqual(
                 abs(model.tstart[ifo] - before[ifo]) * SAMPLE_RATE,
@@ -241,7 +241,7 @@ class TestPeakLockSearch(unittest.TestCase):
         model = self.model(peak_lock_snr=4.0, **SEARCH)
         before = dict(model.tstart)
         model.update(**POINT)
-        model.loglr
+        _ = model.loglr
         for ifo in before:
             samples = (model.tstart[ifo] - before[ifo]) * SAMPLE_RATE
             self.assertAlmostEqual(
@@ -281,7 +281,7 @@ class TestPeakLockSearch(unittest.TestCase):
         model = self.model(mass_offset=0.01, peak_lock_snr=4.0, **SEARCH)
         locked = dict(model.tstart)
         model.update(**POINT)
-        model.loglr
+        _ = model.loglr
         self.assertNotEqual(
             model.tstart["H1"],
             locked["H1"],

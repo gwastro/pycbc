@@ -313,7 +313,7 @@ title_text += f" - {banklen} templates"
 title_text = "\n".join(wrap(args.title if args.title is not None else title_text, 60))
 if not args.no_suptitle:
     fig.suptitle(title_text)
-for k, v in axis_dict.items():
+for v in axis_dict.values():
     # Some may be long labels - tilt the label a little to fit together
     xlab = v[0].get_xlabel()
     v[0].set_xlabel(xlab, rotation=10)

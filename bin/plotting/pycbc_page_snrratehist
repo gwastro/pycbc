@@ -122,7 +122,7 @@ else:
     try:
         fstat = f["foreground/stat"][:]
         fstat.sort()
-    except:
+    except KeyError:
         fstat = None
     if len(fstat) == 0:
         fstat = None
@@ -212,7 +212,7 @@ if fstat is not None and not args.closed_box:
         # Since there is only one background bin we can just remove
         # hierarchically removed triggers from highest ranking statistic
         # to lower ranking statistic.
-        for i in range(h_inc_back_num):
+        for _ in range(h_inc_back_num):
             rm_idx = fstat.argmax()
             fstat_h_rm = numpy.append(fstat_h_rm, fstat[rm_idx])
             fstat = numpy.delete(fstat, rm_idx)

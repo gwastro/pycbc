@@ -92,7 +92,7 @@ for ifo in args.single_trigger_files:
     # Identify trigger idxs within window of trigger time
     with HFile(args.single_trigger_files[ifo], "r") as data:
         idx, _ = data.select(
-            lambda endtime: abs(endtime - t) < args.window,
+            lambda endtime, t=t: abs(endtime - t) < args.window,
             "end_time",
             group=ifo,
             return_data=False,
@@ -132,7 +132,7 @@ for ifo in args.single_trigger_files:
 
     if args.special_trigger_ids:
         special_idx = args.special_trigger_ids[ifo]
-        if special_idx == None:  # No special trigger for this ifo
+        if special_idx is None:  # No special trigger for this ifo
             continue
         elif special_idx not in idx:
             logger.info("IDX %d not in kept list", args.special_trigger_ids[ifo])

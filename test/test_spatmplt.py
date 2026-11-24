@@ -54,7 +54,8 @@ class TestSPAtmplt(unittest.TestCase):
             for m2 in [1.4, 20]:
                 for s1 in [-2, -1, -0.5, 0, 0.5, 1, 2]:
                     for s2 in [-2, -1, -0.5, 0, 0.5, 1, 2]:
-                        # Generate TaylorF2 from lalsimulation, restricting to the capabilities of spatmplt
+                        # Generate TaylorF2 from lalsimulation, restricting to the
+                        # capabilities of spatmplt
                         hpr, _ = get_fd_waveform(
                             mass1=m1,
                             mass2=m2,
@@ -145,7 +146,7 @@ class TestChirpTime(unittest.TestCase):
             freq = hp.sample_frequencies.numpy()
             phase = numpy.unwrap(numpy.angle(hp.numpy()))
 
-            def t_of_f(f0, half=1.0):
+            def t_of_f(f0, half=1.0, freq=freq, phase=phase):
                 sel = (freq > f0 - half) & (freq < f0 + half)
                 # local cubic fit removes the (strong) phase curvature bias
                 coeffs = numpy.polyfit(freq[sel] - f0, phase[sel], 3)

@@ -199,8 +199,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         try:
             p = self.psds[det]
-        except KeyError:
-            raise ValueError(f"No psd set for detector {det}")
+        except KeyError as err:
+            raise ValueError(f"No psd set for detector {det}") from err
         Rss = self._Rss[det]  # noqa: N806
         cov = scipy.linalg.toeplitz(Rss / 2)  # full covariance matrix
         samples, fit = self.logdet_fit(cov, p)
@@ -629,7 +629,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         if rcond >= 1e16:
             warnings.warn(
                 f"Condition number of inverse covariance matrix is "
-                f"{rcond}; inpainting may be numerically unstable"
+                f"{rcond}; inpainting may be numerically unstable",
+                stacklevel=1,
             )
         return rcond
 
@@ -1069,7 +1070,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         gatetimes = {}
         # for now only calculating time from plus polarization; should be all
         # that's necessary
-        for det, (hp, hc) in wfs.items():
+        for det, (hp, _) in wfs.items():
             invpsd = self._invpsds[det]
             hp.resize(len(invpsd))
             ht = hp.to_timeseries()
@@ -1281,9 +1282,9 @@ class GatedGaussianMargPhase(BaseGatedGaussian):
                 ref_phase,
             )
             self.phase_names = [ref_phase]
-        elif type(phase_names) == list:
+        elif type(phase_names) is list:
             self.phase_names = phase_names
-        elif type(phase_names) == str:
+        elif type(phase_names) is str:
             self.phase_names = phase_names.split(" ")
         else:
             raise TypeError(

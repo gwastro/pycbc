@@ -101,7 +101,7 @@ for input_file in args.input_files:
 if args.detector_avg_file:
     logger.info("Averaging over detectors")
     sum_inv_psds = None
-    for ifo, psd in time_avg_psds.items():
+    for psd in time_avg_psds.values():
         if sum_inv_psds is None:
             sum_inv_psds = 1.0 / psd
         else:

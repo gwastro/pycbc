@@ -10,7 +10,7 @@ import logging
 import os
 import re
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import numpy as np
 
@@ -42,6 +42,11 @@ def get_true_date(replay_day_dt, controls):
     true_start_time = int(controls["true-start-time"])
     replay_duration = int(controls["replay-duration"])
     dt_replay_start = gps_to_utc_datetime(replay_start_time)
+
+    if replay_day_dt.tzinfo is None:
+        replay_day_dt = replay_day_dt.replace(tzinfo=UTC)
+    else:
+        replay_day_dt = replay_day_dt.astimezone(UTC)
 
     td = (replay_day_dt - dt_replay_start).total_seconds()
 
@@ -276,7 +281,7 @@ def single_significance_fits(
     daily_args = ["pycbc_live_single_significance_fits"]
 
     gps_start_time = int(utc_datetime_to_gps(day_dt))
-    gps_end_time = int(utc_datetime_to_gps(day_dt) + timedelta(days=1))
+    gps_end_time = int(utc_datetime_to_gps(day_dt + timedelta(days=1)))
 
     daily_fit_options["gps-start-time"] = f"{gps_start_time:d}"
     daily_fit_options["gps-end-time"] = f"{gps_end_time:d}"

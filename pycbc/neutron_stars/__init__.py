@@ -7,5 +7,7 @@ NS_SEQUENCES = [
     for f in os.listdir(NS_DATA_DIRECTORY)
     if f.endswith(".dat")
 ]
-from pycbc.neutron_stars.eos_utils import *
-from pycbc.neutron_stars.pg_isso_solver import *
+# These import NS_DATA_DIRECTORY and NS_SEQUENCES from this package, so
+# they must come after them
+from pycbc.neutron_stars.eos_utils import *  # noqa: E402
+from pycbc.neutron_stars.pg_isso_solver import *  # noqa: E402

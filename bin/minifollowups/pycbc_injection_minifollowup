@@ -473,7 +473,7 @@ for num_event in range(num_events):
         # First, find triggers close to the missed injection
         single_fname = args.single_detector_triggers[curr_ifo]
         idx, _ = HFile(single_fname).select(
-            lambda t: abs(t - inj_params["tc"]) < args.inj_window,
+            lambda t, tc=inj_params["tc"]: abs(t - tc) < args.inj_window,
             f"{curr_ifo}/end_time",
             return_data=False,
         )
@@ -509,7 +509,7 @@ for num_event in range(num_events):
         try:
             # Only present for precessing search
             curr_params["u_vals"] = hd_sngl.u_vals[0]
-        except:
+        except KeyError:
             pass
 
         curr_tags = [f"TMPLT_PARAMS_{curr_ifo}"]

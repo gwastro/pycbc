@@ -9,6 +9,8 @@
 
 import os
 
+from pycbc.libutils import get_libpath_from_dirlist, pkg_config_libdirs
+
 try:
     from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 except ImportError:
@@ -20,7 +22,6 @@ needs_mkl = ["pycbc_inspiral", "pycbc_single_template"]
 # Some of our libaries are not being picked up automatically (need to invest.)
 # In the meantime we can pull them manually, in the same way we normally
 # find them
-from pycbc.libutils import get_libpath_from_dirlist, pkg_config_libdirs
 
 
 def find_lib_path(libname, packages):
@@ -69,7 +70,7 @@ cwd = os.environ.get("PYCBC_HOOKS_DIR", os.getcwd())
 basedir = cwd.replace("tools/static", "")
 rootdir = basedir + "pycbc/results"
 
-for root, subdirs, files in os.walk(rootdir):
+for root, _, files in os.walk(rootdir):
     for filename in files:
         if not filename.endswith(".py") and not filename.endswith(".pyc"):
             file_path = os.path.join(root, filename)

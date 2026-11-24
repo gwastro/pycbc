@@ -721,7 +721,9 @@ class FieldArray(numpy.recarray):
 
     Create an array with subfields:
 
-    >>> x = FieldArray(4, dtype=[('foo', [('cat', float), ('hat', int)]), ('bar', float)])
+    >>> x = FieldArray(
+    ...     4, dtype=[('foo', [('cat', float), ('hat', int)]), ('bar', float)]
+    ... )
     >>> x.fieldnames
         ['foo.cat', 'foo.hat', 'bar']
 
@@ -769,7 +771,9 @@ class FieldArray(numpy.recarray):
     array([u'SpinTaylorT2', u'SpinTaylorT2', u'SpinTaylorT2', ...,
            u'SpinTaylorT2', u'SpinTaylorT2', u'SpinTaylorT2'], dtype=object)
 
-    >>> sim_array = FieldArray.from_ligolw_table(sim_table, columns=['simulation_id', 'mass1', 'mass2'])
+    >>> sim_array = FieldArray.from_ligolw_table(
+    ...     sim_table, columns=['simulation_id', 'mass1', 'mass2']
+    ... )
     >>> sim_array
     FieldArray([(0, 2.274406909942627, 2.6340370178222656),
            (1, 1.8505810499191284, 2.8336880207061768),
@@ -871,7 +875,7 @@ class FieldArray(numpy.recarray):
             if attr in self.fields:
                 return self.__getitem__(attr)
             # otherwise, unrecognized
-            raise AttributeError(e)
+            raise
 
     def __setitem__(self, item, values):
         """
@@ -914,13 +918,13 @@ class FieldArray(numpy.recarray):
         """Gets a subfield using `field.subfield` notation."""
         try:
             return self.__getbaseitem__(item)
-        except ValueError as err:
+        except ValueError:
             subitems = item.split(".")
             if len(subitems) > 1:
                 return self.__getbaseitem__(subitems[0]).__getsubitem__(
                     ".".join(subitems[1:])
                 )
-            raise ValueError(err)
+            raise
 
     def __getitem__(self, item):
         """
@@ -1010,9 +1014,9 @@ class FieldArray(numpy.recarray):
         """
         try:
             numpy.recarray.sort(self, axis=axis, kind=kind, order=order)
-        except ValueError:
+        except ValueError as err:
             if isinstance(order, list):
-                raise ValueError("Cannot process more than one order field")
+                raise ValueError("Cannot process more than one order field") from err
             self[:] = self[numpy.argsort(self[order])]
 
     def addattr(self, attrname, value=None, persistent=True):
@@ -1432,7 +1436,9 @@ class FieldArray(numpy.recarray):
         Return `"TaylorF2"` for all elements with `mtotal < 4`,
         `"SEOBNR_ROM_DoubleSpin"` otherwise:
 
-        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')])
+        >>> arr.parse_boolargs(
+        ...     [('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')]
+        ... )
             (array(['TaylorF2', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
             'SEOBNRv2_ROM_DoubleSpin'],
             dtype='|S23'),
@@ -1441,14 +1447,19 @@ class FieldArray(numpy.recarray):
         The following will also return the same:
 
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin',)])
-        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', '')])
+        >>> arr.parse_boolargs(
+        ...     [('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', '')]
+        ... )
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
 
         Return `"TaylorF2"` for all elements with `mtotal < 3`, `"IMRPhenomD"`
         for all elements with `3 <= mtotal < 4`, `"SEOBNRv2_ROM_DoubleSpin"`
         otherwise:
 
-        >>> arr.parse_boolargs([('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
+        >>> arr.parse_boolargs(
+        ...     [('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'),
+        ...      'SEOBNRv2_ROM_DoubleSpin']
+        ... )
             (array(['IMRPhenomD', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
             'SEOBNRv2_ROM_DoubleSpin'],
             dtype='|S23'),
@@ -1624,13 +1635,13 @@ def fields_from_names(fields, names=None):
     for name in names:
         try:
             outfields[name] = fields[name]
-        except KeyError:
+        except KeyError as err:
             if name in aliases_to_names:
                 key = (name, aliases_to_names[name])
             elif name in names_to_aliases:
                 key = (names_to_aliases[name], name)
             else:
-                raise KeyError(f"default fields has no field {name}")
+                raise KeyError(f"default fields has no field {name}") from err
             outfields[key] = fields[key]
     return outfields
 
@@ -1872,7 +1883,9 @@ class WaveformArray(_FieldArrayWithDefaults):
     Additional fields can also be specified using the additional_fields
     keyword argument. Example:
 
-    >>> warr = WaveformArray(10, names=['mass1', 'mass2'], additional_fields=[('bar', float)])
+    >>> warr = WaveformArray(
+    ...     10, names=['mass1', 'mass2'], additional_fields=[('bar', float)]
+    ... )
     >>> warr.fieldnames
         ('mass1', 'mass2', 'bar')
 

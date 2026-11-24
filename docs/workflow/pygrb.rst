@@ -61,12 +61,46 @@ We may define all the detectors (IFOs) that we are considering in our analysis::
 The data frame types and other related options are given in::
 
     [workflow-datafind]
-    datafind-method = AT_RUNTIME_SINGLE_CACHES
+    datafind-method = AT_RUNTIME_SINGLE_FRAMES
     datafind-check-segment-gaps = raise_error
     datafind-check-frames-exist = raise_error
     datafind-check-segment-summary = no_test
     datafind-h1-frame-type = H1_HOFT_C00
     datafind-l1-frame-type = L1_HOFT_C00
+
+PyGRB analyses a short stretch of data, so the frame files are given to the
+jobs that read them explicitly, as ``--frame-files``. This lets the workflow
+track and transfer them like any other input, which is needed when running
+without a shared filesystem. Frame cache files (``--frame-cache``, or the
+``*_CACHES`` datafind methods) should not be used with PyGRB.
+
+The frame files can instead be listed in the configuration file, without a
+datafind query, by setting ``datafind-method = AT_RUNTIME_FAKE_DATA``. This
+is what the example in ``examples/workflow/pygrb/GW170817`` does. The
+``frame-files`` option then goes in the ``[inspiral]`` section, where each
+file needs its own detector prefix, and in the per-detector sections of the
+other executables that read data, such as ``[calculate_psd-h1]`` and
+``[plot_qscan-h1]``, where it does not::
+
+    [workflow]
+    h1-frame-1 = ${resolve:./H-H1_EXAMPLE-1187000320-4096.gwf}
+    h1-frame-2 = ${resolve:./H-H1_EXAMPLE-1187004416-4096.gwf}
+    l1-frame-1 = ${resolve:./L-L1_EXAMPLE-1187000320-4096.gwf}
+    l1-frame-2 = ${resolve:./L-L1_EXAMPLE-1187004416-4096.gwf}
+
+    [inspiral]
+    frame-files = H1:${workflow|h1-frame-1}
+        H1:${workflow|h1-frame-2}
+        L1:${workflow|l1-frame-1}
+        L1:${workflow|l1-frame-2}
+
+    [calculate_psd-h1&plot_qscan-h1]
+    frame-files = ${workflow|h1-frame-1}
+        ${workflow|h1-frame-2}
+
+Use one option per frame file: ``${resolve:...}`` is not expanded after a
+detector prefix, so the prefix has to be added when the value is interpolated.
+Do not set both ``frame-files`` and ``frame-type`` for the same executable.
 
 Data segment information is given in the section::
 

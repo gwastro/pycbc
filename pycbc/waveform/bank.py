@@ -988,7 +988,8 @@ class FilterBank(TemplateBank):
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
-                    f"a more serious issue. Approximant: {approximant}"
+                    f"a more serious issue. Approximant: {approximant}",
+                    stacklevel=1,
                 )
 
         if full_calculate_waveform:
@@ -1044,7 +1045,8 @@ class FilterBank(TemplateBank):
                     "self.get_decompressed_waveform has raised a KeyError. "
                     "This may be as the compressed waveform has not been "
                     "generated for this approximant, but it could indicate "
-                    f"a more serious issue. Approximant: {approximant}"
+                    f"a more serious issue. Approximant: {approximant}",
+                    stacklevel=1,
                 )
 
         if full_calculate_waveform:
@@ -1097,11 +1099,11 @@ def find_variable_start_frequency(
     if f_start is None:
         f = parameters.f_lower
     elif max_length is not None:
-        l = max_length + 1
+        length = max_length + 1
         f = f_start - delta_f
-        while l > max_length:
+        while length > max_length:
             f += delta_f
-            l = pycbc.waveform.get_waveform_filter_length_in_time(
+            length = pycbc.waveform.get_waveform_filter_length_in_time(
                 approximant, parameters, f_lower=f
             )
     else:
@@ -1246,7 +1248,8 @@ class RatioFilterBank(FilterBank):
 
         if "fir_data" not in self.filehandler:
             raise ValueError(
-                f"File {filename} does not contain 'fir_data' group required for RatioFilterBank."
+                f"File {filename} does not contain 'fir_data' "
+                "group required for RatioFilterBank."
             )
 
         self.fir_group = self.filehandler["fir_data"]

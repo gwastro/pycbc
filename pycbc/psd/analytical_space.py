@@ -36,6 +36,12 @@ from scipy.interpolate import interp1d
 
 from pycbc.psd.read import from_numpy_arrays
 
+# Arm lengths of the space-borne detectors, in the unit of 'm'. These are the
+# default values of the len_arm arguments below.
+LISA_ARM_LENGTH = 2.5e9
+TAIJI_ARM_LENGTH = 3e9
+TIANQIN_ARM_LENGTH = np.sqrt(3) * 1e8
+
 
 def _psd_acc_noise(f, acc_noise_level=None):
     """
@@ -396,7 +402,7 @@ def analytical_psd_lisa_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
     tdi=None,
@@ -442,7 +448,7 @@ def analytical_psd_tianqin_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=np.sqrt(3) * 1e8,
+    len_arm=TIANQIN_ARM_LENGTH,
     acc_noise_level=1e-15,
     oms_noise_level=1e-12,
     tdi=None,
@@ -491,7 +497,7 @@ def analytical_psd_taiji_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=3e9,
+    len_arm=TAIJI_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=8e-12,
     tdi=None,
@@ -583,7 +589,7 @@ def analytical_csd_lisa_tdi_XY(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
     tdi=None,
@@ -680,7 +686,7 @@ def analytical_psd_lisa_tdi_AE(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
     tdi=None,
@@ -726,7 +732,7 @@ def analytical_psd_tianqin_tdi_AE(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=np.sqrt(3) * 1e8,
+    len_arm=TIANQIN_ARM_LENGTH,
     acc_noise_level=1e-15,
     oms_noise_level=1e-12,
     tdi=None,
@@ -775,7 +781,7 @@ def analytical_psd_taiji_tdi_AE(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=3e9,
+    len_arm=TAIJI_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=8e-12,
     tdi=None,
@@ -872,7 +878,7 @@ def analytical_psd_lisa_tdi_T(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
     tdi=None,
@@ -918,7 +924,7 @@ def analytical_psd_tianqin_tdi_T(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=np.sqrt(3) * 1e8,
+    len_arm=TIANQIN_ARM_LENGTH,
     acc_noise_level=1e-15,
     oms_noise_level=1e-12,
     tdi=None,
@@ -967,7 +973,7 @@ def analytical_psd_taiji_tdi_T(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=3e9,
+    len_arm=TAIJI_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=8e-12,
     tdi=None,
@@ -1011,7 +1017,7 @@ def analytical_psd_taiji_tdi_T(  # noqa: N802
     )
 
 
-def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
+def averaged_lisa_fplus_sq_numerical(f, len_arm=LISA_ARM_LENGTH):
     """
     A numerical fit for LISA's squared antenna response function,
     averaged over sky and polarization angle.
@@ -1036,7 +1042,7 @@ def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
     from pycbc.io import get_file
 
     if len_arm != 2.5e9:
-        raise ValueError("Currently only support 'len_arm=2.5e9'.")
+        raise ValueError("Currently only support 'len_arm=LISA_ARM_LENGTH'.")
     # Download the numerical LISA averaged response.
     url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
     file_path = get_file(url, cache=True)
@@ -1078,7 +1084,7 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
     return (3.0 / 20.0) * (1.0 / (1.0 + 0.6 * omega_length(f, len_arm) ** 2))
 
 
-def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3) * 1e8):
+def averaged_tianqin_fplus_sq_numerical(f, len_arm=TIANQIN_ARM_LENGTH):
     """
     A numerical fit for TianQin's squared antenna response function,
     averaged over sky and polarization angle.
@@ -1128,7 +1134,7 @@ def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3) * 1e8):
     return np.concatenate((low_f_result, high_f_result))
 
 
-def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi=None):
+def averaged_response_lisa_tdi(f, len_arm=LISA_ARM_LENGTH, tdi=None):
     """
     LISA's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
@@ -1164,7 +1170,7 @@ def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi=None):
     return response_tdi
 
 
-def averaged_response_tianqin_tdi(f, len_arm=np.sqrt(3) * 1e8, tdi=None):
+def averaged_response_tianqin_tdi(f, len_arm=TIANQIN_ARM_LENGTH, tdi=None):
     """
     TianQin's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
@@ -1196,7 +1202,7 @@ def averaged_response_tianqin_tdi(f, len_arm=np.sqrt(3) * 1e8, tdi=None):
     return response_tdi
 
 
-def averaged_response_taiji_tdi(f, len_arm=3e9, tdi=None):
+def averaged_response_taiji_tdi(f, len_arm=TAIJI_ARM_LENGTH, tdi=None):
     """
     Taiji's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
@@ -1232,7 +1238,7 @@ def sensitivity_curve_lisa_semi_analytical(
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
 ):
@@ -1283,7 +1289,7 @@ def sensitivity_curve_tianqin_analytical(
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=np.sqrt(3) * 1e8,
+    len_arm=TIANQIN_ARM_LENGTH,
     acc_noise_level=1e-15,
     oms_noise_level=1e-12,
 ):
@@ -1330,7 +1336,7 @@ def sensitivity_curve_taiji_analytical(
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=3e9,
+    len_arm=TAIJI_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=8e-12,
 ):
@@ -1590,7 +1596,7 @@ def sensitivity_curve_lisa_confusion(
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
     base_model="semi",
@@ -1654,7 +1660,7 @@ def sensitivity_curve_tianqin_confusion(
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=np.sqrt(3) * 1e8,
+    len_arm=TIANQIN_ARM_LENGTH,
     acc_noise_level=1e-15,
     oms_noise_level=1e-12,
     duration=1.0,
@@ -1708,7 +1714,7 @@ def sensitivity_curve_taiji_confusion(
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=3e9,
+    len_arm=TAIJI_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=8e-12,
     duration=1.0,
@@ -1760,7 +1766,7 @@ def sh_transformed_psd_lisa_tdi_XYZ(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
     base_model="semi",
@@ -1828,7 +1834,7 @@ def sh_transformed_psd_lisa_tdi_XYZ(  # noqa: N802
 
 
 def semi_analytical_psd_lisa_confusion_noise(
-    length, delta_f, low_freq_cutoff, len_arm=2.5e9, duration=1.0, tdi=None
+    length, delta_f, low_freq_cutoff, len_arm=LISA_ARM_LENGTH, duration=1.0, tdi=None
 ):
     """
     The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA Galactic confusion noise,
@@ -1876,7 +1882,7 @@ def semi_analytical_psd_lisa_confusion_noise(
 
 
 def analytical_psd_tianqin_confusion_noise(
-    length, delta_f, low_freq_cutoff, len_arm=np.sqrt(3) * 1e8, duration=1.0, tdi=None
+    length, delta_f, low_freq_cutoff, len_arm=TIANQIN_ARM_LENGTH, duration=1.0, tdi=None
 ):
     """
     The TDI-1.5/2.0 PSD (X,Y,Z channel) for TianQin Galactic confusion
@@ -1926,7 +1932,7 @@ def analytical_psd_tianqin_confusion_noise(
 
 
 def analytical_psd_taiji_confusion_noise(
-    length, delta_f, low_freq_cutoff, len_arm=3e9, duration=1.0, tdi=None
+    length, delta_f, low_freq_cutoff, len_arm=TAIJI_ARM_LENGTH, duration=1.0, tdi=None
 ):
     """
     The TDI-1.5/2.0 PSD (X,Y,Z channel) for Taiji Galactic confusion
@@ -1977,7 +1983,7 @@ def analytical_psd_lisa_tdi_AE_confusion(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=2.5e9,
+    len_arm=LISA_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=15e-12,
     duration=1.0,
@@ -2029,7 +2035,7 @@ def analytical_psd_tianqin_tdi_AE_confusion(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=np.sqrt(3) * 1e8,
+    len_arm=TIANQIN_ARM_LENGTH,
     acc_noise_level=1e-15,
     oms_noise_level=1e-12,
     duration=1.0,
@@ -2081,7 +2087,7 @@ def analytical_psd_taiji_tdi_AE_confusion(  # noqa: N802
     length,
     delta_f,
     low_freq_cutoff,
-    len_arm=3e9,
+    len_arm=TAIJI_ARM_LENGTH,
     acc_noise_level=3e-15,
     oms_noise_level=8e-12,
     duration=1.0,

@@ -34,8 +34,10 @@ def _gates_from_cli(opts, gate_opt):
             central_time = float(central_time)
             half_dur = float(half_dur)
             taper_dur = float(taper_dur)
-        except ValueError:
-            raise ValueError(f"--gate {gate} not formatted correctly; " + "see help")
+        except ValueError as err:
+            raise ValueError(
+                f"--gate {gate} not formatted correctly; " + "see help"
+            ) from err
         try:
             gates[ifo].append((central_time, half_dur, taper_dur))
         except KeyError:

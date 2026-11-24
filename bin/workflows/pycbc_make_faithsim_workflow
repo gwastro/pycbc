@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
 """
-Program for running a faithfulness comparisons workflow analysis between two approximants
-and generate files containing the match between them and plots.
+Program for running a faithfulness comparisons workflow analysis between two
+approximants and generate files containing the match between them and plots.
 """
 
 import argparse

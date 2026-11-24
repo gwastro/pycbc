@@ -20,12 +20,6 @@ likelihood or evidence of a model.
 import numpy
 from scipy import integrate
 
-# numpy renamed trapz to trapezoid in 2.0 and removed trapz in 2.x
-try:
-    from numpy import trapezoid
-except ImportError:  # numpy < 2.0
-    from numpy import trapz as trapezoid
-
 
 def arithmetic_mean_estimator(log_likelihood):
     """
@@ -95,12 +89,6 @@ def harmonic_mean_estimator(log_likelihood):
 
     return log_evidence
 
-
-# numpy.trapz was renamed to numpy.trapezoid in numpy 2.0.
-try:
-    from numpy import trapezoid as _trapezoid
-except ImportError:  # numpy < 2.0
-    from numpy import trapz as _trapezoid
 
 
 def mean_logl_by_temperature(logls, betas):
@@ -174,8 +162,8 @@ def ladder_thermodynamic_integration(betas, logls):
     else:
         betas2 = numpy.concatenate((betas0[:-1:2], [0]))
         logls2 = numpy.concatenate((logls[:-1:2], [logls[-1]]))
-    logz = -_trapezoid(logls, betas)
-    logz2 = -_trapezoid(logls2, betas2)
+    logz = -numpy.trapezoid(logls, betas)
+    logz2 = -numpy.trapezoid(logls2, betas2)
     return logz, numpy.abs(logz - logz2)
 
 
@@ -235,7 +223,7 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
     average_logl = numpy.average(log_likelihood, axis=1)
 
     if method in ("trapezoid", "trapezoid_corrected"):
-        log_evidence = trapezoid(average_logl, betas)
+        log_evidence = numpy.trapezoid(average_logl, betas)
 
     if method == "trapezoid_corrected":
         # var_correction holds the derivative correction terms
@@ -272,7 +260,7 @@ def thermodynamic_integration(log_likelihood, betas, method="simpsons"):
 
     if method in ("trapezoid", "trapezoid_corrected"):
         for i, _ in enumerate(log_likelihood[0]):
-            ti_vec[i] = trapezoid(logl_per_samp[i], betas)
+            ti_vec[i] = numpy.trapezoid(logl_per_samp[i], betas)
 
     elif method == "simpsons":
         for i, _ in enumerate(log_likelihood[0]):

@@ -228,7 +228,8 @@ seg_summ_table = pycbc.workflow.make_seg_table(
     rdir.base,
     ["SUMMARY"],
     title_text="Input and output time",
-    description="This shows the total amount of input data, analyzable data, and the time for which PSDs are produced.",
+    description="This shows the total amount of input data, "
+    "analyzable data, and the time for which PSDs are produced.",
 )
 result_plots += [(seg_summ_table,)]
 

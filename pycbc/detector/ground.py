@@ -192,21 +192,23 @@ def load_detector_config(config_files):
         kwds = dict(conf.items(f"detector-{det}"))
         try:
             method, arg_names = methods[kwds.pop("method")]
-        except KeyError:
-            raise ValueError(f"Missing or unkown method, options are {methods.keys()}")
+        except KeyError as err:
+            raise ValueError(
+                f"Missing or unkown method, options are {methods.keys()}"
+            ) from err
         for k in kwds:
             kwds[k] = float(kwds[k])
         try:
             args = [kwds.pop(arg) for arg in arg_names]
-        except KeyError:
+        except KeyError as err:
             raise ValueError(
                 f"missing required detector argument {arg_names} are required"
-            )
+            ) from err
         method(det.upper(), *args, **kwds)
 
 
 # prepopulate using detectors hardcoded into lalsuite
-for pref, name in get_available_lal_detectors():
+for pref, _ in get_available_lal_detectors():
     lalsim = pycbc.libutils.import_optional("lalsimulation")
     lal_det = lalsim.DetectorPrefixToLALDetector(pref).frDetector
     add_detector_on_earth(
@@ -457,9 +459,11 @@ class Detector:
         Returns
         -------
         fplus(default) or fx or fb : float or numpy.ndarray
-            The plus or vector-x or breathing polarization factor for this sky location / orientation
+            The plus or vector-x or breathing polarization factor for this sky
+            location / orientation
         fcross(default) or fy or fl : float or numpy.ndarray
-            The cross or vector-y or longitudnal polarization factor for this sky location / orientation
+            The cross or vector-y or longitudnal polarization factor for this sky
+            location / orientation
 
         """
         if isinstance(t_gps, lal.LIGOTimeGPS):

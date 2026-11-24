@@ -6,6 +6,8 @@ PyCBC.
 import configparser
 import logging
 import os.path
+import socket
+import sys
 from html.parser import HTMLParser
 from xml.sax.saxutils import escape, unescape
 
@@ -148,11 +150,45 @@ def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):
         extension = os.path.splitext(filename)[1]
         kwds["version"] = pycbc.version.git_verbose_msg
         _metadata_saver[extension](fig, filename, fig_kwds, kwds)
-    except KeyError:
+    except KeyError as err:
         raise TypeError(
             f"Cannot save file {filename} with metadata, extension {extension} not "
             "supported at this time"
-        )
+        ) from err
+
+
+def save_workflow_log(log_path, html_path, workflow_name):
+    """
+    Save the log of a workflow generation script as an html results page.
+
+    The page also states where and on which host the script was run. Shut
+    down logging first, so that the log file is complete.
+
+    Parameters
+    ----------
+    log_path: str
+        Path of the log file written by the script.
+    html_path: str
+        Path of the html page to write.
+    workflow_name: str
+        Name of the workflow.
+
+    """
+    with open(log_path) as logfile:
+        logdata = logfile.read()
+    log_str = f"""
+<p>Workflow generation script created workflow in output directory: {os.getcwd()}</p>
+<p>Workflow name is: {workflow_name}</p>
+<p>Workflow generation script run on host: {socket.gethostname()}</p>
+<pre>{logdata}</pre>
+"""
+    save_fig_with_metadata(
+        log_str,
+        html_path,
+        title="Workflow Generation Log",
+        caption=f"Log of the workflow script {sys.argv[0]}",
+        cmd=" ".join(sys.argv),
+    )
 
 
 def load_metadata_from_file(filename):
@@ -173,8 +209,8 @@ def load_metadata_from_file(filename):
     try:
         extension = os.path.splitext(filename)[1]
         return _metadata_loader[extension](filename)
-    except KeyError:
+    except KeyError as err:
         raise TypeError(
             f"Cannot read metadata from file {filename}, extension {extension} not "
             "supported at this time"
-        )
+        ) from err

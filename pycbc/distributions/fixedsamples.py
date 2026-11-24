@@ -89,16 +89,16 @@ class FixedSamples:
         # possible second dimension, probably shouldn't
         # do more dimensions than this
         u2 = original[self.params[1]]
-        l = numpy.searchsorted(self.p1sorted, p1v * (1 - self.frac))
-        r = numpy.searchsorted(self.p1sorted, p1v * (1 + self.frac))
-        if r < l:
-            l, r = r, l
+        left = numpy.searchsorted(self.p1sorted, p1v * (1 - self.frac))
+        right = numpy.searchsorted(self.p1sorted, p1v * (1 + self.frac))
+        if right < left:
+            left, right = right, left
 
-        region = numpy.array(self.sort[l:r], ndmin=1)
+        region = numpy.array(self.sort[left:right], ndmin=1)
         p2 = self.samples[self.params[1]]
         p2part = numpy.array(p2[region], ndmin=1)
-        l = p2part.argsort()
-        p2part = numpy.array(p2part[l], ndmin=1)
+        order = p2part.argsort()
+        p2part = numpy.array(p2part[order], ndmin=1)
 
         i2 = int(round(u2 * len(p2part)))
         if i2 >= len(p2part):
@@ -106,7 +106,7 @@ class FixedSamples:
         i2 = max(i2, 0)
         new[self.params[1]] = p2part[i2]
 
-        p1part = numpy.array(self.p1[region[l]], ndmin=1)
+        p1part = numpy.array(self.p1[region[order]], ndmin=1)
         new[self.params[0]] = p1part[i2]
         return new
 

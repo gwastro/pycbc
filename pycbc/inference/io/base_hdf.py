@@ -338,9 +338,9 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         for arg in args:
             try:
                 parsed[arg] = getattr(opts, arg)
-            except AttributeError as e:
+            except AttributeError:
                 if err_on_missing:
-                    raise AttributeError(e)
+                    raise
                 continue
         parsed.update(kwargs)
         return parsed
@@ -1019,10 +1019,10 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         try:
             indices = sorted(map(int, self[self.config_group].keys()))
             index = indices[index]
-        except KeyError:
-            raise ValueError("no config files saved in hdf")
-        except IndexError:
-            raise ValueError("no config file matches requested index")
+        except KeyError as err:
+            raise ValueError("no config files saved in hdf") from err
+        except IndexError as err:
+            raise ValueError("no config file matches requested index") from err
         cf = load_state(self, path=self.config_group, dsetname=str(index))
         cf.seek(0)
         if return_cp:

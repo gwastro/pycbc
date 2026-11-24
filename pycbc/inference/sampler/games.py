@@ -211,7 +211,7 @@ class GameSampler(DummySampler):
 
         weight = lengths[passed] / lengths[passed].sum()
 
-        for i in range(self.rounds):
+        for _ in range(self.rounds):
             try:
                 psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(
                     weight / weight.sum(), passed, lengths[passed]

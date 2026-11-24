@@ -145,10 +145,10 @@ def coalign_waveforms(
         high_frequency_cutoff=high_frequency_cutoff,
     )
 
-    _, l = snr.abs_max_loc()
-    rotation = snr[l] / abs(snr[l])
+    _, loc = snr.abs_max_loc()
+    rotation = snr[loc] / abs(snr[loc])
     h1 = (h1.to_frequencyseries() * rotation).to_timeseries()
-    h1.roll(l)
+    h1.roll(loc)
 
     h1 = TimeSeries(h1, delta_t=h2.delta_t, epoch=h2.start_time)
     return h1, h2

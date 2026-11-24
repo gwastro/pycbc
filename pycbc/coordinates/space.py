@@ -56,6 +56,9 @@ TIME_OFFSET_20_DEGREES = 7365189.431698299
 OMEGA_0 = 1.99098659277e-7
 R_ORBIT = au.value
 
+# The Earth's axial tilt (obliquity), in the unit of 'radian'.
+EARTH_OBLIQUITY = np.deg2rad(23.439281)
+
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
 # more general for other detectors in the near future.
 
@@ -515,7 +518,7 @@ def lisa_to_ssb(
     return params_ssb
 
 
-def rotation_matrix_ssb_to_geo(epsilon=np.deg2rad(23.439281)):
+def rotation_matrix_ssb_to_geo(epsilon=EARTH_OBLIQUITY):
     """
     The rotation matrix (of frame basis) from SSB frame to
     geocentric frame.

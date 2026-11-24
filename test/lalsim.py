@@ -31,6 +31,7 @@ import unittest
 from types import SimpleNamespace
 
 import lalsimulation
+import matplotlib
 import numpy
 from utils import _check_scheme_cpu, simple_exit
 
@@ -115,11 +116,10 @@ parser.add_option("--tidal-order", type=int, default=-1, help="[default: %defaul
 print(72 * "=")
 print("Running CPU unit tests for Lalsimulation Waveforms:")
 
-import matplotlib
-
 if not opt.show_plots:
     matplotlib.use("Agg")
-from matplotlib import pyplot as plt
+# The backend depends on --show-plots, so pyplot is imported once it is set
+from matplotlib import pyplot as plt  # noqa: E402
 
 
 def get_waveform(p, **kwds):
@@ -286,7 +286,7 @@ class TestLALSimulation(unittest.TestCase):
 
         hp, _ = get_waveform(self.p)
 
-        for i in range(10):
+        for _ in range(10):
             p_near = nearby(self.p)
             hpn, _ = get_waveform(p_near)
 
@@ -319,7 +319,7 @@ class TestLALSimulation(unittest.TestCase):
             nearby_params.coa_phase *= uniform(low=1 - tol, high=1 + tol)
             return nearby_params
 
-        for i in range(10):
+        for _ in range(10):
             p_near = nearby(self.p)
             get_waveform(p_near)
 

@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 effd = {"H1": "eff_dist_h", "L1": "eff_dist_l", "V1": "eff_dist_v"}
 
 
-def remove(l, i):
-    to_remove = [l[t] for t in i]
+def remove(items, i):
+    to_remove = [items[t] for t in i]
     for r in to_remove:
-        l.remove(r)
+        items.remove(r)
 
 
 parser = argparse.ArgumentParser()

@@ -44,11 +44,11 @@ if "fftw" in pycbc.fft.get_backend_names():
 
     try:
         pycbc.fft.fftw.set_threads_backend("openmp")
-    except:
+    except RuntimeError as err:
         raise unittest.SkipTest(
             "Unable to import openmp threads backend to FFTW; "
             "skipping openmp thread tests"
-        )
+        ) from err
 else:
     raise unittest.SkipTest(
         "FFTW does not seem to be an available CPU backend; "

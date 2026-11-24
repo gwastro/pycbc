@@ -20,7 +20,7 @@ import logging
 
 from igwn_segments import segmentlist
 
-from pycbc.workflow.core import Executable, FileList, SegFile, make_analysis_dir
+from pycbc.workflow.core import Executable, FileList, SegFile
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +33,12 @@ class MergePSDFiles(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
 
 
-def chunks(l, n):
-    """Yield n successive chunks from l."""
-    newn = int(len(l) / n)
+def chunks(items, n):
+    """Yield n successive chunks from items."""
+    newn = int(len(items) / n)
     for i in range(n - 1):
-        yield l[i * newn : i * newn + newn]
-    yield l[n * newn - newn :]
+        yield items[i * newn : i * newn + newn]
+    yield items[n * newn - newn :]
 
 
 def merge_psds(workflow, files, ifo, out_dir, tags=None):
@@ -56,7 +56,6 @@ def setup_psd_calculate(
     workflow, frame_files, ifo, segments, segment_name, out_dir, tags=None
 ):
     tags = tags or []
-    make_analysis_dir(out_dir)
     if workflow.cp.has_option_tags("workflow-psd", "parallelization-factor", tags=tags):
         num_parts = int(
             workflow.cp.get_opt_tags(

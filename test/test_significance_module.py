@@ -23,8 +23,8 @@ def parse_args(args):
 ifos = ["H1", "L1", "V1"]
 # What combinations of the ifos can we make?
 combos = []
-for l in np.arange(len(ifos)) + 1:
-    combos += ["".join(c) for c in itertools.combinations(ifos, l)]
+for nifos in np.arange(len(ifos)) + 1:
+    combos += ["".join(c) for c in itertools.combinations(ifos, nifos)]
 
 
 class SignificanceParserTest(unittest.TestCase):
@@ -188,7 +188,7 @@ for method in significance._significance_meth_dict:
 
         def meth_test(self, md=method_dict):
             bg_n_louder, fg_n_louder, sig_info = significance.get_n_louder(
-                self.test_bg_stat, self.test_fg_stat, self.dec_facs, **method_dict
+                self.test_bg_stat, self.test_fg_stat, self.dec_facs, **md
             )
 
             back_stat_sort = np.argsort(self.test_bg_stat)

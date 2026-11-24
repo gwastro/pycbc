@@ -125,8 +125,8 @@ def insert_base_bank_options(parser, match_req=True):
         err_msg = f"must be a number between 0 and 1 excluded, not {s!r}"
         try:
             value = float(s)
-        except ValueError:
-            raise argparse.ArgumentTypeError(err_msg)
+        except ValueError as err:
+            raise argparse.ArgumentTypeError(err_msg) from err
         if value <= 0 or value >= 1:
             raise argparse.ArgumentTypeError(err_msg)
         return value
@@ -1123,8 +1123,8 @@ class MassRangeParameters:
                 if self.max_mass2 > max_ns_g_mass:
                     err_msg = f"""
                              The maximum NS mass supported by this EOS is
-                             {max_ns_g_mass - 0.0000000001}. Please set --max-mass2 to this value or run
-                             without the --use-eos-max-ns-mass flag.
+                             {max_ns_g_mass - 0.0000000001}. Please set --max-mass2 to
+                             this value or run without the --use-eos-max-ns-mass flag.
                              """
                     raise ValueError(err_msg)
             self.delta_bh_spin = delta_bh_spin or self.default_delta_bh_spin

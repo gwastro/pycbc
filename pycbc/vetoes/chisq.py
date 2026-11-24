@@ -279,7 +279,8 @@ def power_chisq_from_precomputed(
     snr: TimeSeries
         The unnormalized snr time series.
     snr_norm:
-        The snr normalization factor (true snr = snr * snr_norm) EXPLAINME - define 'true snr'?
+        The snr normalization factor (true snr = snr * snr_norm) EXPLAINME
+        - define 'true snr'?
     bins: List of integers
         The edges of the chisq bins.
     indices: {Array, None}, optional
