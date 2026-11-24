@@ -40,6 +40,8 @@ from pycbc.workflow.core import FileList, SegFile, configparser_value_to_file
 from pycbc.workflow.injection import compute_inj_optimal_snr
 from pycbc.workflow.psd import make_psd_file
 
+logger = logging.getLogger(__name__)
+
 workflow_name = "pygrb_offline"
 
 # Parse command line options and instantiate pycbc workflow object
@@ -56,7 +58,7 @@ main_wf = _workflow.Workflow(args, workflow_name + "-main")
 finalize_wf = _workflow.Workflow(args, workflow_name + "-finalization")
 tags = []
 
-logging.info("Generating %s workflow" % workflow_name)
+logger.info("Generating %s workflow" % workflow_name)
 
 # Options for features that have been removed: stop rather than ignore them
 for section, option in [
@@ -70,7 +72,7 @@ for section, option in [
 # Setup run directory
 triggername = str(main_wf.cp.get("workflow", "trigger-name"))
 output_dir = os.path.abspath(args.output_dir)
-logging.info("Workflow will be generated in %s", output_dir)
+logger.info("Workflow will be generated in %s", output_dir)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 os.chdir(output_dir)
@@ -154,7 +156,7 @@ elif len(sci_segs.keys()) < 2 and not single_ifo:
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
-    logging.error(msg)
+    logger.error(msg)
     sys.exit()
 
 on_src, off_src, buffer_seg = _workflow.generate_triggered_segment(
@@ -163,7 +165,7 @@ on_src, off_src, buffer_seg = _workflow.generate_triggered_segment(
 
 sci_segs = segmentlistdict(sci_segs)
 if on_src is None:
-    logging.info("Making segment plot and exiting.")
+    logger.info("Making segment plot and exiting.")
     # `make_grb_segments_plot()` wants a single segment for fail_criterion.
     fail_criterion = off_src[main_wf.ifos[0]][0]
     make_grb_segments_plot(
@@ -189,7 +191,7 @@ seg_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2], file_url=plot_m
 sci_segs = off_src
 
 if len(sci_segs) == 1:
-    logging.info("Generating a single IFO search.")
+    logger.info("Generating a single IFO search.")
     mf_tag = "sngl"
 elif len(sci_segs) > 1:
     mf_tag = "coherent"
@@ -327,7 +329,7 @@ if main_wf.cp.has_section("calculate_psd"):
 
         tv_psd_files.append(psd_file)
 
-    logging.info("Created %d time-varying PSDs", len(tv_psd_files))
+    logger.info("Created %d time-varying PSDs", len(tv_psd_files))
 
 # INJECTIONS
 injs = None
@@ -364,7 +366,7 @@ if main_wf.cp.has_section("workflow-injections"):
                 main_wf, inj, tv_psd_files, snr_dir, tags=[inj_tag]
             )
             optimal_snr_files.append(snr_file)
-            logging.info(
+            logger.info(
                 "Optimal SNR workflow node created for injection tag %s", inj_tag
             )
         injs = optimal_snr_files
