@@ -11,7 +11,7 @@ download_frame() {
     local fname="$2"
     mkdir -p "${FRAME_DIR}"
     if [ ! -s "${FRAME_DIR}/${fname}" ]; then
-        wget -nv --tries=3 --timeout=20 "${url}/${fname}" -O "${FRAME_DIR}/${fname}" || {
+        wget -nv "${url}/${fname}" -O "${FRAME_DIR}/${fname}" || {
             rm -f "${FRAME_DIR}/${fname}"
             return 1
         }
@@ -29,6 +29,14 @@ H1_TIMES=(1186725888 1186729984 1186734080 1186738176)
 L1_TIMES=(1186729984 1186734080 1186738176 1186742272 1186746368)
 V1_TIMES=(1186729984 1186734080 1186738176 1186742272 1186750464)
 
+# Probe the fast 2 kHz mirror once so unreachable mirrors fail fast without
+# timing out sequentially on every frame.
+MIRROR_AVAILABLE=0
+if wget -q --spider --tries=1 --timeout=5 \
+    "${MIRROR_BASE_URL}/H-H1_DATASAMPLER_O2_2048HZ-${H1_TIMES[0]}-4096.hdf5"; then
+    MIRROR_AVAILABLE=1
+fi
+
 write_cache() {
     local site="$1"
     local ifo="$2"
@@ -40,7 +48,7 @@ write_cache() {
         local local_2k="${GWDATA_DIR}/O2/${ifo}/1185939456/${fn_2k}"
         if [ -n "${GWDATA_DIR}" ] && [ -s "${local_2k}" ]; then
             echo "${site} ${ifo}_DATASAMPLER_O2_2048HZ ${t} 4096 file://$(realpath "${local_2k}")" >> "${out}"
-        elif download_frame "${MIRROR_BASE_URL}" "${fn_2k}"; then
+        elif [ "${MIRROR_AVAILABLE}" -eq 1 ] && download_frame "${MIRROR_BASE_URL}" "${fn_2k}"; then
             echo "${site} ${ifo}_DATASAMPLER_O2_2048HZ ${t} 4096 file://$(realpath "${FRAME_DIR}/${fn_2k}")" >> "${out}"
         else
             local fn_4k="${site}-${ifo}_GWOSC_O2_4KHZ_R1-${t}-4096.hdf5"
