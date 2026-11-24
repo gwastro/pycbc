@@ -28,14 +28,15 @@ generation of pygrb workflows. For details about pycbc.workflow see here:
 http://pycbc.org/pycbc/latest/html/workflow.html
 """
 
-import os
 import logging
+import os
+
 import numpy as np
-from scipy.stats import rayleigh
 from gwdatafind.utils import filename_metadata
+from scipy.stats import rayleigh
 
 from pycbc import makedir
-from pycbc.workflow.core import File, FileList, resolve_url_to_file, Executable, Node
+from pycbc.workflow.core import Executable, File, FileList, Node, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable

@@ -22,18 +22,16 @@ inference samples files.
 import argparse
 import logging
 import os
+import shlex
 import socket
 import sys
-import shlex
+
 import numpy
 
-from pycbc import results, init_logging, add_common_pycbc_options
-from pycbc.results import layout
-from pycbc.workflow import configuration
-from pycbc.workflow import core
-from pycbc.workflow import plotting
-from pycbc.workflow import versioning
 import pycbc.workflow.inference_followups as inffu
+from pycbc import add_common_pycbc_options, init_logging, results
+from pycbc.results import layout
+from pycbc.workflow import configuration, core, plotting, versioning
 
 
 def read_events_from_config(cp):

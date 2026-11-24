@@ -23,16 +23,14 @@ import os
 import shlex
 import socket
 import sys
+
 import numpy
 
 import pycbc
+import pycbc.workflow.inference_followups as inffu
 from pycbc import results
 from pycbc.results import layout
-from pycbc.workflow import configuration
-from pycbc.workflow import core
-from pycbc.workflow import plotting
-from pycbc.workflow import versioning
-import pycbc.workflow.inference_followups as inffu
+from pycbc.workflow import configuration, core, plotting, versioning
 from pycbc.workflow.jobsetup import PycbcInferenceExecutable
 
 

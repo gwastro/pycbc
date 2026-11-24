@@ -22,17 +22,16 @@ finding and ranking then generate post-processing
 and plots.
 """
 
-import pycbc
-
-import sys
-import socket
-import os
 import argparse
-import logging
 import itertools
+import logging
+import os
+import socket
+import sys
 
 import igwn_segments as segments
 
+import pycbc
 import pycbc.events
 import pycbc.workflow as wf
 from pycbc.results import layout, save_fig_with_metadata
