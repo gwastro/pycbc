@@ -204,7 +204,7 @@ parser.add_argument(
     "--remove-unvetoed",
     action="store_true",
     help="If provided, remove triggers from unvetoed times "
-    "and use triggers from vetoed times for fitting"
+    "and use triggers from vetoed times for fitting",
 )
 
 statsmod.insert_statistic_option_group(
@@ -276,35 +276,44 @@ if args.save_trig_param:
 if not args.remove_unvetoed:
     # Calculate total time being analysed from segments
     # use set() to eliminate duplicates
-    segment_starts = sorted(set(trigf['{}/search/start_time'.format(args.ifo)][:]))
-    segment_ends = sorted(set(trigf['{}/search/end_time'.format(args.ifo)][:]))
+    segment_starts = sorted(set(trigf[f"{args.ifo}/search/start_time"][:]))
+    segment_ends = sorted(set(trigf[f"{args.ifo}/search/end_time"][:]))
     all_segments = events.veto.start_end_to_segments(segment_starts, segment_ends)
 
     # now do vetoing
-    for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
-        retain, junk = events.veto.indices_outside_segments(time, [veto_file],
-                                     ifo=args.ifo, segment_name=veto_segment_name)
-        all_segments -= events.veto.select_segments_by_definer(veto_file,
-                                                               ifo=args.ifo,
-                                                               segment_name=veto_segment_name)
+    for veto_file, veto_segment_name in zip(
+        args.veto_file, args.veto_segment_name, strict=True
+    ):
+        retain, junk = events.veto.indices_outside_segments(
+            time, [veto_file], ifo=args.ifo, segment_name=veto_segment_name
+        )
+        all_segments -= events.veto.select_segments_by_definer(
+            veto_file, ifo=args.ifo, segment_name=veto_segment_name
+        )
         stat = stat[retain]
         tid = tid[retain]
         time = time[retain]
-        logger.info('%i trigs left after vetoing with %s' %
-                                                           (len(stat), veto_file))
+        logger.info("%i trigs left after vetoing with %s" % (len(stat), veto_file))
 else:
     # Calculate total time being analysed from veto segments
     # Collection of time indices within veto segments is to be used in retaining
     all_segments = []
     retain = np.array([], dtype=int)
-    for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
-        retain = np.union1d(retain, events.veto.indices_within_segments(time, [veto_file],
-                                     ifo=args.ifo, segment_name=veto_segment_name)[0])
-        all_segments += events.veto.select_segments_by_definer(veto_file,
-                                                               ifo=args.ifo,
-                                                               segment_name=veto_segment_name)
-        logger.info('%i trigs to be kept after vetoing outside %s' %
-                                                           (retain.size, veto_file))
+    for veto_file, veto_segment_name in zip(
+        args.veto_file, args.veto_segment_name, strict=True
+    ):
+        retain = np.union1d(
+            retain,
+            events.veto.indices_within_segments(
+                time, [veto_file], ifo=args.ifo, segment_name=veto_segment_name
+            )[0],
+        )
+        all_segments += events.veto.select_segments_by_definer(
+            veto_file, ifo=args.ifo, segment_name=veto_segment_name
+        )
+        logger.info(
+            "%i trigs to be kept after vetoing outside %s" % (retain.size, veto_file)
+        )
 # Include gating vetoes
 if args.gating_veto_windows:
     gating_veto = args.gating_veto_windows[args.ifo].split(",")
@@ -327,22 +336,22 @@ if args.gating_veto_windows:
         ).coalesce()
         if not args.remove_unvetoed:
             all_segments -= gveto_segs
-            gveto_retain_idx = events.veto.indices_outside_times(time,
-                                                                 gate_times + gveto_before,
-                                                                 gate_times + gveto_after)
+            gveto_retain_idx = events.veto.indices_outside_times(
+                time, gate_times + gveto_before, gate_times + gveto_after
+            )
             stat = stat[gveto_retain_idx]
             tid = tid[gveto_retain_idx]
             time = time[gveto_retain_idx]
         else:
             all_segments += gveto_segs
-            gveto_retain_idx = events.veto.indices_within_times(time,
-                                                                 gate_times + gveto_before,
-                                                                 gate_times + gveto_after)
+            gveto_retain_idx = events.veto.indices_within_times(
+                time, gate_times + gveto_before, gate_times + gveto_after
+            )
             retain = np.union1d(retain, gveto_retain_idx)
             stat = stat[retain]
             tid = tid[retain]
             time = time[retain]
-        logger.info('%i trigs left after vetoing triggers near gates' % len(stat))
+        logger.info("%i trigs left after vetoing triggers near gates" % len(stat))
 
 total_time = abs(all_segments)
 
