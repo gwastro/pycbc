@@ -1,6 +1,8 @@
 """Unit tests for bounded timeslide coincidence and multi-detector trigger reading."""
 
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -114,6 +116,60 @@ class TestBoundedCoincidence(unittest.TestCase):
             with open(out_well, encoding="utf-8") as fh:
                 content = fh.read()
             self.assertIn(os.path.join(target_dir, "test.png"), content)
+
+    def test_page_ifar_bounded_timeslide_decimation(self):
+        """Verify pycbc_page_ifar bounds slides and aligns with decimation_factor."""
+        script_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "bin",
+            "plotting",
+            "pycbc_page_ifar",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            trig_path = os.path.join(tmpdir, "statmap.hdf")
+            out_png = os.path.join(tmpdir, "ifar.png")
+            with h5py.File(trig_path, "w") as fp:
+                fp.attrs["ifos"] = "H1 L1"
+                fp.attrs["timeslide_interval"] = 0.1
+                fp.attrs["foreground_time"] = 2000.0
+                fp.attrs["background_time"] = 600000.0
+                fp.attrs["max_timeslide_id"] = 150
+                seg = fp.create_group("segments/H1L1")
+                seg["start"] = np.array([0.0, 1000000.0])
+                seg["end"] = np.array([1000.0, 1001000.0])
+                bg = fp.create_group("background")
+                bg["timeslide_id"] = np.array([-100, 100], dtype=np.int64)
+                bg["ifar"] = np.array([0.5, 1.0], dtype=np.float64)
+                fg = fp.create_group("foreground")
+                fg["ifar"] = np.array([2.0], dtype=np.float64)
+
+            env = os.environ.copy()
+            env["MPLBACKEND"] = "Agg"
+            res = subprocess.run(
+                [
+                    sys.executable,
+                    script_path,
+                    "--trigger-file",
+                    trig_path,
+                    "--output-file",
+                    out_png,
+                    "--decimation-factor",
+                    "100",
+                    "--open-box",
+                ],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(res.returncode, 0, msg=res.stderr)
+            self.assertTrue(os.path.isfile(out_png))
+            # Both -100 and +100 slides must be plotted (0 empty slides)
+            with open(out_png, "rb") as fh:
+                png_bytes = fh.read()
+            self.assertIn(b"2 time slides plotted", png_bytes)
+            self.assertIn(b"0 of the plotted slides have zero events", png_bytes)
 
 
 if __name__ == "__main__":
