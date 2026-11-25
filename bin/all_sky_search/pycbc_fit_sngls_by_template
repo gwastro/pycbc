@@ -293,7 +293,7 @@ if not args.remove_unvetoed:
         stat = stat[retain]
         tid = tid[retain]
         time = time[retain]
-        logger.info("%i trigs left after vetoing with %s" % (len(stat), veto_file))
+        logger.info(f"{len(stat)} trigs left after vetoing with {veto_file}")
 else:
     # Calculate total time being analysed from veto segments
     # Collection of time indices within veto segments is to be used in retaining
@@ -312,7 +312,7 @@ else:
             veto_file, ifo=args.ifo, segment_name=veto_segment_name
         )
         logger.info(
-            "%i trigs to be kept after vetoing outside %s" % (retain.size, veto_file)
+            f"{retain.size} trigs to be kept after vetoing outside {veto_file}"
         )
 # Include gating vetoes
 if args.gating_veto_windows:
@@ -351,7 +351,7 @@ if args.gating_veto_windows:
             stat = stat[retain]
             tid = tid[retain]
             time = time[retain]
-        logger.info("%i trigs left after vetoing triggers near gates" % len(stat))
+        logger.info(f"{len(stat)} trigs left after vetoing triggers near gates")
 
 total_time = abs(all_segments)
 
