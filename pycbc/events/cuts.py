@@ -162,12 +162,12 @@ def convert_inputstr(inputstr, choices):
             cut_values.append(
                 float(cut_value_str) if cut_value_str is not None else None
             )
-        except ValueError as value_e:
+        except ValueError:
             logger.warning(
                 'ERROR: A cut value must be convertible into a float, got "%s".',
                 cut_value_str,
             )
-            raise value_e
+            raise
     cut_value1, cut_value2 = cut_values
 
     if cut_value2_str is None:
