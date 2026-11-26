@@ -36,6 +36,13 @@ class TestIOHFile(unittest.TestCase):
         """
         should_be_checksummed = []
         should_not_be_checksummed = []
+        # HDF5 < 2.0 refuses filters on variable-length datatypes, so HFile
+        # falls back to no checksum; HDF5 >= 2.0 accepts them
+        vlen_checksummed = (
+            should_be_checksummed
+            if h5py.version.hdf5_version_tuple >= (2, 0, 0)
+            else should_not_be_checksummed
+        )
         with tempfile.TemporaryDirectory() as td:
             # Lets make a file / some datasets using HFile:
             p = os.path.join(td, "f1.hdf")
@@ -89,11 +96,11 @@ class TestIOHFile(unittest.TestCase):
                     data=str_list,
                     dtype=h5py.string_dtype("utf-8"),
                 )
-                should_not_be_checksummed.append("data_str_list")
+                vlen_checksummed.append("data_str_list")
 
                 # Make an object array from some string data
                 f.create_dataset("data_obj_list", data=np.array(str_list, dtype=object))
-                should_not_be_checksummed.append("data_obj_list")
+                vlen_checksummed.append("data_obj_list")
 
                 # Make a datasets from scalars:
                 f.create_dataset("data_scalar_with_dtype", data=0, dtype="f8")
