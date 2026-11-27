@@ -128,11 +128,10 @@ def convert_inputstr(inputstr, choices):
                 "If using two limits for the same cut, "
                 "the limits must be opposite in nature"
             )
-        else:
-            # For ease of handling, let limit1 be always assigned lower*
-            if "upper" in cut_limit1 and "lower" in cut_limit2:
-                cut_limit1, cut_limit2 = cut_limit2, cut_limit1
-                cut_value1_str, cut_value2_str = cut_value2_str, cut_value1_str
+        # For ease of handling, let limit1 be always assigned lower*
+        if "upper" in cut_limit1 and "lower" in cut_limit2:
+            cut_limit1, cut_limit2 = cut_limit2, cut_limit1
+            cut_value1_str, cut_value2_str = cut_value2_str, cut_value1_str
     else:
         raise ValueError(
             "ERROR: Cut string format not correct, please "
