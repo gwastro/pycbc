@@ -81,3 +81,16 @@ for scheme_name in ["cpu", "mkl", "cuda", "cupy"]:
                                  _all_backends_dict)
     except ImportError:
         pass
+
+def ensure_fftw_planning_off():
+    """Set FFTW's measure level to 0 (estimate-only planning), if FFTW is
+    available, so that doing only a handful of FFTs isn't dominated by
+    FFTW's plan-measurement cost.
+
+    If FFTW isn't available then do nothing.
+    """
+    try:
+        from pycbc.fft.fftw import set_measure_level
+        set_measure_level(0)
+    except ImportError:
+        pass

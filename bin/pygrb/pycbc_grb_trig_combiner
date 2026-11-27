@@ -21,29 +21,29 @@
 """
 
 import argparse
-import os
 import logging
-
-import numpy
-
-import tqdm
+import os
 
 import h5py
-
-from gwdatafind.utils import (file_segment, filename_metadata)
-
 import igwn_segments as segments
-from igwn_segments.utils import fromsegwizard
+import numpy
+import tqdm
+from gwdatafind.utils import file_segment, filename_metadata
 
 from pycbc import add_common_pycbc_options, init_logging
-from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 from pycbc.io.hdf import HFile
+from pycbc.results.pygrb_postprocessing_utils import (
+    read_seg_files,
+    template_hash_to_id,
+)
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
-TQDM_BAR_FORMAT = ("{desc}: |{bar}| "
-                   "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
-                   "[{elapsed} | ETA {remaining}]")
+TQDM_BAR_FORMAT = (
+    "{desc}: |{bar}| "
+    "{n_fmt}/{total_fmt} {unit} ({percentage:3.0f}%) "
+    "[{elapsed} | ETA {remaining}]"
+)
 TQDM_KW = {
     "ascii": " -=#",
     "bar_format": TQDM_BAR_FORMAT,
@@ -287,22 +287,6 @@ def bin_events(inputfile, bins, outdir, filetag,
             logging.info("%s written to %s", bin_, outf)
 
 
-def read_segment_files(segdir):
-    segs = {}
-    for name, filename in {
-            "buffer": "bufferSeg.txt",
-            "off": "offSourceSeg.txt",
-            "on": "onSourceSeg.txt",
-    }.items():
-        try:
-            with open(os.path.join(segdir, filename), "r") as f:
-                segs[name], = fromsegwizard(f)
-        except ValueError as exc:
-            exc.args = ("more than one segment, an error has occurred",)
-            raise
-    return segs
-
-
 # -- parse command line -------------------------
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -366,9 +350,10 @@ parser.add_argument(
 )
 parser.add_argument(
     "-a",
-    "--segment-dir",
+    "--seg-files",
+    nargs="+",
     required=True,
-    help="directory holding buffer, on and off source segment files",
+    help="the buffer, off source and on source segment files, in that order",
 )
 parser.add_argument(
     "-s",
@@ -435,7 +420,7 @@ else:
 
 # -- construct segments -------------------------
 
-segs = read_segment_files(args.segment_dir)
+segs = read_seg_files(args.seg_files)
 trialtime = abs(segs["on"])
 bins = {
     "ONSOURCE": segs["on"],
@@ -477,8 +462,9 @@ for i, j in enumerate(offtrials):
     _te = _ts + trialtime
     bins["OFFTRIAL_{}".format(i+1)] = seg = segments.segment(_ts, _te)
     if seg not in bins["OFFSOURCE"]:
-        raise ValueError(f"off-trial {i+1} not in off-source segments\n"
-                         f"off-trial {i+1} : {seg}\n")
+        raise ValueError(
+            f"off-trial {i+1} not in off-source segments\noff-trial {i+1} : {seg}\n"
+        )
     logging.info("          off-trial %d : %s", i + 1, seg)
 
 # -- read triggers ------------------------------

@@ -175,8 +175,7 @@ def pygrb_add_bestnr_cut_opt(parser):
 # =============================================================================
 # Wrapper to read segments files
 # =============================================================================
-# An underscore at the name start flags a function called only in this file
-def _read_seg_files(seg_files):
+def read_seg_files(seg_files):
     """Read segments txt files"""
 
     if len(seg_files) != 3:
@@ -677,7 +676,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, veto_file,
     trial_dict = {}
 
     # Get segments
-    segs = _read_seg_files(seg_files)
+    segs = read_seg_files(seg_files)
 
     # Separate segments
     trial_time = abs(segs['on'])

@@ -64,8 +64,6 @@ init_logging(args.verbose, default_level=1)
 
 workflow = wf.Workflow(args)
 
-wf.makedir(args.output_dir)
-
 channel_opts = {}
 for ifo in workflow.ifos:
     channel_opts[ifo] = workflow.cp.get_opt_tags(

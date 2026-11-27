@@ -28,15 +28,19 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-import os
 import logging
+import os
 
-from pycbc.workflow.core import FileList, make_analysis_dir
-from pycbc.workflow.jobsetup import (PycbcSplitBankExecutable,
-        PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable,
-        PycbcHDFSplitInjExecutable)
+from pycbc.workflow.core import FileList
+from pycbc.workflow.jobsetup import (
+    PycbcHDFSplitInjExecutable,
+    PycbcSplitBankExecutable,
+    PycbcSplitBankXmlExecutable,
+    PycbcSplitInspinjExecutable,
+)
 
-logger = logging.getLogger('pycbc.workflow.splittable')
+logger = logging.getLogger("pycbc.workflow.splittable")
+
 
 def select_splitfilejob_instance(curr_exe):
     """
@@ -59,23 +63,24 @@ def select_splitfilejob_instance(curr_exe):
         and the job returned by this **must** contain
         * job.create_node()
     """
-    if curr_exe == 'pycbc_hdf5_splitbank':
+    if curr_exe == "pycbc_hdf5_splitbank":
         exe_class = PycbcSplitBankExecutable
-    elif curr_exe == 'pycbc_splitbank':
+    elif curr_exe == "pycbc_splitbank":
         exe_class = PycbcSplitBankXmlExecutable
-    elif curr_exe == 'pycbc_split_inspinj':
+    elif curr_exe == "pycbc_split_inspinj":
         exe_class = PycbcSplitInspinjExecutable
-    elif curr_exe == 'pycbc_hdf_splitinj':
+    elif curr_exe == "pycbc_hdf_splitinj":
         exe_class = PycbcHDFSplitInjExecutable
     else:
         # Should we try some sort of default class??
-        err_string = "No class exists for Executable %s" %(curr_exe,)
+        err_string = "No class exists for Executable %s" % (curr_exe,)
         raise NotImplementedError(err_string)
 
     return exe_class
 
+
 def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
-    '''
+    """
     This function aims to be the gateway for code that is responsible for taking
     some input file containing some table, and splitting into multiple files
     containing different parts of that table. For now the only supported operation
@@ -95,20 +100,21 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
     --------
     split_table_outs : pycbc.workflow.core.FileList
         The list of split up files as output from this job.
-    '''
+    """
     if tags is None:
         tags = []
     logger.info("Entering split output files module.")
-    make_analysis_dir(out_dir)
     # Parse for options in .ini file
-    splitMethod = workflow.cp.get_opt_tags("workflow-splittable",
-                                           "splittable-method", tags)
+    splitMethod = workflow.cp.get_opt_tags(
+        "workflow-splittable", "splittable-method", tags
+    )
 
     if splitMethod == "IN_WORKFLOW":
         # Scope here for choosing different options
         logger.info("Adding split output file jobs to workflow.")
-        split_table_outs = setup_splittable_dax_generated(workflow,
-                input_tables, out_dir, tags)
+        split_table_outs = setup_splittable_dax_generated(
+            workflow, input_tables, out_dir, tags
+        )
     elif splitMethod == "NOOP":
         # Probably better not to call the module at all, but this option will
         # return the input file list.
@@ -121,8 +127,9 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
     logger.info("Leaving split output files module.")
     return split_table_outs
 
+
 def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
-    '''
+    """
     Function for setting up the splitting jobs as part of the workflow.
 
     Parameters
@@ -138,30 +145,30 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
     --------
     split_table_outs : pycbc.workflow.core.FileList
         The list of split up files as output from this job.
-    '''
+    """
     cp = workflow.cp
 
     # Get values from ini file
     try:
-        num_splits = cp.get_opt_tags("workflow-splittable",
-                                     "splittable-num-banks", tags)
+        num_splits = cp.get_opt_tags(
+            "workflow-splittable", "splittable-num-banks", tags
+        )
     except BaseException:
-        inj_interval = int(cp.get_opt_tags("workflow-splittable",
-                                           "splitinjtable-interval", tags))
-        if cp.has_option_tags("em_bright_filter", "max-keep", tags) and \
-                cp.has_option("workflow-injections", "em-bright-only"):
-            num_injs = int(cp.get_opt_tags("em_bright_filter", "max-keep",
-                                           tags))
+        inj_interval = int(
+            cp.get_opt_tags("workflow-splittable", "splitinjtable-interval", tags)
+        )
+        if cp.has_option_tags("em_bright_filter", "max-keep", tags) and cp.has_option(
+            "workflow-injections", "em-bright-only"
+        ):
+            num_injs = int(cp.get_opt_tags("em_bright_filter", "max-keep", tags))
         else:
             # This needed to be changed from num-injs to ninjections in order
             # to work properly with pycbc_create_injections
-            num_injs = int(cp.get_opt_tags("workflow-injections",
-                                           "ninjections", tags))
+            num_injs = int(cp.get_opt_tags("workflow-injections", "ninjections", tags))
         inj_tspace = float(abs(workflow.analysis_time)) / num_injs
         num_splits = int(inj_interval // inj_tspace) + 1
 
-    split_exe_tag = cp.get_opt_tags("workflow-splittable",
-                                    "splittable-exe-tag", tags)
+    split_exe_tag = cp.get_opt_tags("workflow-splittable", "splittable-exe-tag", tags)
     split_exe = os.path.basename(cp.get("executables", split_exe_tag))
     # Select the appropriate class
     exe_class = select_splitfilejob_instance(split_exe)
@@ -170,12 +177,10 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
     out_file_groups = FileList([])
 
     # Set up the condorJob class for the current executable
-    curr_exe_job = exe_class(workflow.cp, split_exe_tag, num_splits,
-                             out_dir=out_dir)
+    curr_exe_job = exe_class(workflow.cp, split_exe_tag, num_splits, out_dir=out_dir)
 
     for input in input_tables:
         node = curr_exe_job.create_node(input, tags=tags)
         workflow.add_node(node)
         out_file_groups += node.output_files
     return out_file_groups
-
