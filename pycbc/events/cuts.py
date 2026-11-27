@@ -300,7 +300,7 @@ def sigma_multiple_cut_thresh(template_ids, statistic, cut_thresh, ifo):
     statistic_classname = statistic.__class__.__name__
     if not hasattr(statistic, "fits_by_tid"):
         raise ValueError(
-            'Cut parameter "sigma_muliple" cannot '
+            'Cut parameter "sigma_multiple" cannot '
             "be used when the ranking statistic "
             + statistic_classname
             + " does not use "
