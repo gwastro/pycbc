@@ -98,7 +98,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except Exception:
         vinfo = VersionDummy()
-        vinfo.version = "2.12.0"
+        vinfo.version = "2.12.1"
         vinfo.release = True
 
     version_script = f"""# coding: utf-8
