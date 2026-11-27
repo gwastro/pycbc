@@ -97,11 +97,78 @@ class TestSGChisq(unittest.TestCase):
         )
         np.testing.assert_allclose(chisq_ow, chisq, rtol=1e-5)
 
+    def test_tile_cache_is_bounded_by_memory(self):
+        # The same waveform under 24 template hashes: 24 sets of tiles
+        first = self.sg.values(
+            self.signal,
+            self.template,
+            self.psd,
+            self.snrv,
+            self.norm,
+            indices=self.peak,
+            overwhitened=False,
+        )
+        tiles = next(iter(self.sg._tile_cache.values()))
+        one_set = sum(tile[0].data.nbytes for tile in tiles)
+        # Each tile holds only the band it is evaluated on
+        for gtem, kmin, kmax, _, _ in tiles:
+            self.assertEqual(len(gtem), kmax - kmin)
+
+        # Room for 20 sets: the cache holds 20, and no fewer than 16 with room for none
+        for budget, held in ((20 * one_set, 20), (0, 16)):
+            sg = SingleDetSGChisq(None, num_bins="16")
+            sg.do = True
+            sg.params = {}
+            sg.tile_cache_bytes = budget
+            for template_hash in range(1, 25):
+                sg.params[template_hash] = "20-300,20-350"
+                self.template.params = argparse.Namespace(template_hash=template_hash)
+                chisq = sg.values(
+                    self.signal,
+                    self.template,
+                    self.psd,
+                    self.snrv,
+                    self.norm,
+                    indices=self.peak,
+                    overwhitened=False,
+                )
+                np.testing.assert_array_equal(chisq, first)
+            self.assertEqual(len(sg._tile_cache), held)
+        self.template.params = argparse.Namespace(template_hash=1)
+
     def test_cli_options(self):
         parser = argparse.ArgumentParser()
         SingleDetSGChisq.insert_option_group(parser)
         parser.add_argument("--chisq-bins", default="16")
         self.assertFalse(SingleDetSGChisq.from_cli(parser.parse_args([])).do)
+
+    def test_overlapping_tile_subtract_signal(self):
+        sg_inband = SingleDetSGChisq(None, num_bins="16")
+        sg_inband.do = True
+        sg_inband.params = {1: "20--120"}
+
+        unsubtracted = sg_inband.values(
+            self.signal,
+            self.template,
+            self.psd,
+            self.snrv,
+            self.norm,
+            indices=self.peak,
+            overwhitened=False,
+            subtract_signal=False,
+        )
+        subtracted = sg_inband.values(
+            self.signal,
+            self.template,
+            self.psd,
+            self.snrv,
+            self.norm,
+            indices=self.peak,
+            overwhitened=False,
+            subtract_signal=True,
+        )
+        self.assertGreater(unsubtracted[0], 5.0)
+        self.assertAlmostEqual(subtracted[0], 1.0, delta=1.0)
 
 
 suite = unittest.TestSuite()

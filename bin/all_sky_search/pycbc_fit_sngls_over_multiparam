@@ -564,6 +564,16 @@ outfile["count_above_thresh"] = smoothed_vals[:, 0]
 outfile["fit_coeff"] = smoothed_vals[:, 1]
 outfile["count_in_template"] = smoothed_vals[:, 2]
 if median_sigma is not None:
+    nan_mask = numpy.isnan(median_sigma)
+    if numpy.any(nan_mask) and not numpy.all(nan_mask):
+        order_p = numpy.argsort(parvals[0])
+        valid_p = ~nan_mask[order_p]
+        median_sigma = median_sigma.copy()
+        median_sigma[nan_mask] = numpy.interp(
+            parvals[0][nan_mask],
+            parvals[0][order_p][valid_p],
+            median_sigma[order_p][valid_p],
+        )
     outfile["median_sigma"] = median_sigma
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param, strict=True):

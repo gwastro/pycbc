@@ -534,7 +534,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             sref = numpy.array(ref["snr"], ndmin=1)[rtype]
             sigref = numpy.array(ref["sigmasq"], ndmin=1) ** 0.5
             sigref = sigref[rtype]
-            senseref = self.relsense[self.hist_ifos[0]]
+            senseref = self.relsense[ref_ifo]
 
             binned = []
             other_ifos = [ifo for ifo in self.ifos if ifo != ref_ifo]

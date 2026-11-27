@@ -239,12 +239,36 @@ if interval == 0:
     # background
     tsids = numpy.array([0])
 else:
-    min_tsid = numpy.rint(min_tsid) // opts.decimation_factor
-    max_tsid = numpy.rint(max_tsid) // opts.decimation_factor
+    min_tsid = numpy.rint(min_tsid)
+    max_tsid = numpy.rint(max_tsid)
+    eff_dec = max(1, opts.decimation_factor)
 
-    tsids = (
-        numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * opts.decimation_factor
-    )
+    # Bound timeslide range when max_timeslide_id is recorded, or when
+    # analyzed background_time covers far fewer slides without truncating triggers
+    n_half = None
+    if "max_timeslide_id" in fp.attrs:
+        n_half = max(0, int(fp.attrs["max_timeslide_id"]))
+    elif (
+        "background_time" in fp.attrs
+        and "foreground_time" in fp.attrs
+        and fp.attrs["foreground_time"] > 0
+    ):
+        ratio = fp.attrs["background_time"] / fp.attrs["foreground_time"]
+        est_half = round(ratio / 2.0)
+        max_obs = int(numpy.abs(back_tsid).max()) if len(back_tsid) else 0
+        if ratio < (max_tsid - min_tsid) / 2 and est_half >= max_obs:
+            n_half = max(0, est_half)
+
+    if n_half is not None:
+        max_dec = n_half // eff_dec
+        tsids = numpy.arange(-max_dec, max_dec + 1, 1).astype(numpy.int64) * eff_dec
+    else:
+        tsids = (
+            numpy.arange(min_tsid // eff_dec, max_tsid // eff_dec, 1).astype(
+                numpy.int64
+            )
+            * eff_dec
+        )
 
 allbkg_dur = 0
 allbkg_ifars = []

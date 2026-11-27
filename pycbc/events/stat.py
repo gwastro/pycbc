@@ -697,7 +697,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             tref = ts[ref_ifo]
             sref = ss[ref_ifo]
             sigref = sigs[ref_ifo]
-            senseref = self.relsense[self.hist_ifos[0]]
+            senseref = self.relsense[ref_ifo]
 
             binned = []
             other_ifos = [ifo for ifo in self.ifos if ifo != ref_ifo]
