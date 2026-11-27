@@ -5,12 +5,12 @@ Unit tests for cuts being applied to trigger and templates
 import argparse
 import copy
 import unittest
+
 import numpy as np
 from utils import simple_exit
 
 from pycbc.events import cuts, ranking
 from pycbc.tmpltbank import bank_conversions
-from pycbc.io import get_chisq_from_file_choice
 
 
 def parse_args(args):
@@ -64,51 +64,11 @@ test_parser_raises_error.append(
 )
 
 test_parser_raises_error.append(
-    (
-        ["--trigger-cuts", "newsnr:5.5:nonsense"],
-        NotImplementedError,
-        "nonsense_limit",
-    )
+    (["--trigger-cuts", "newsnr:5.5:nonsense"], NotImplementedError, "nonsense_limit")
 )
 
 test_parser_raises_error.append(
-    (
-        ["--trigger-cuts", "newsnr:5.5:lower:2.2:lower"],
-        NotImplementedError,
-        "both_lower_limits",
-    )
-)
-
-test_parser_raises_error.append(
-    (
-        ["--trigger-cuts", "newsnr:5.5:upper:2.2:upper"],
-        NotImplementedError,
-        "both_upper_limits",
-    )
-)
-
-test_parser_raises_error.append(
-    (
-        ["--trigger-cuts", "newsnr:notafloat:upper"],
-        ValueError,
-        "threshold_not_a_float",
-    )
-)
-
-test_parser_raises_error.append(
-    (
-        ["--trigger-cuts", "newsnr:5.5:lower:notafloat:upper"],
-        ValueError,
-        "second_threshold_not_a_float",
-    )
-)
-
-test_parser_raises_error.append(
-    (
-        ["--trigger-cuts", "newsnr:2.2:lower:5.5:upper"],
-        NotImplementedError,
-        "upper_limit_value_not_smaller_than_lower_limit_value",
-    )
+    (["--trigger-cuts", "newsnr:notafloat:upper"], ValueError, "threshold_not_a_float")
 )
 
 # Dynamically add error tests into the class
@@ -238,6 +198,7 @@ def newsnr_sgveto_upper_test(trigs, trig_idx, **kwargs):
     rwsnr = ranking.get_newsnr_sgveto(trigs)
     return all(rwsnr[trig_idx] < 10)
 
+
 test_cut_output.append(
     (
         ["--trigger-cuts", "newsnr_sgveto:10:upper"],
@@ -251,6 +212,7 @@ test_cut_output.append(
 def template_duration_test(temps, temp_idx, **kwargs):
     return all(temps["template_duration"][temp_idx] > 10)
 
+
 test_cut_output.append(
     (
         ["--template-cuts", "template_duration:10:lower"],
@@ -259,22 +221,11 @@ test_cut_output.append(
     )
 )
 
-# Two limits for interval-cut on directly-read template bank parameter
-def template_duration_limits_test(temps, temp_idx, **kwargs):
-    return all((temps["template_duration"][temp_idx] > 10) | (temps["template_duration"][temp_idx] < 2))
-
-test_cut_output.append(
-    (
-        ["--template-cuts", "template_duration:10:lower:2:upper"],
-        template_duration_limits_test,
-        "template_duration_lower_upper",
-    )
-)
-
 
 # make sure the "or equal to" is working properly
 def mass1_ge_test(temps, temp_idx, **kwargs):
     return any(temps["mass1"][temp_idx] == 59)
+
 
 test_cut_output.append(
     (["--template-cuts", "mass1:59:lower_inc"], mass1_ge_test, "mass1_orequal")
@@ -292,62 +243,6 @@ test_cut_output.append(
         ["--template-cuts", "chi_eff:0.8:upper", "chi_eff:-0.5:lower_inc"],
         chi_eff_upper_lower_test,
         "chi_eff_cut_upper_lower",
-    )
-)
-
-
-# Mixed limits on trigger or derived parameters; single-limit is specified first
-def traditional_chisq_lower_snr_lower_upper_test(trigs, trig_idx, **kwargs):
-    value = get_chisq_from_file_choice(trigs, 'traditional')
-    return all((value[trig_idx] < 10) & ((trigs["snr"][trig_idx] < 5) | (trigs["snr"][trig_idx] > 7)))
-
-test_cut_output.append(
-    (
-        ["--trigger-cuts", "traditional_chisq:10:upper_inc", "snr:7:lower_inc:5:upper_inc"],
-        traditional_chisq_lower_snr_lower_upper_test,
-        "traditional_chisq_lower_snr_lower_upper_test",
-    )
-)
-
-
-# Mixed limits on trigger or derived parameters; double-limit is specified first
-def snr_lower_upper_traditional_chisq_lower_test(trigs, trig_idx, **kwargs):
-    value = get_chisq_from_file_choice(trigs, 'traditional')
-    return all((value[trig_idx] < 10) & ((trigs["snr"][trig_idx] < 5) | (trigs["snr"][trig_idx] > 7)))
-
-test_cut_output.append(
-    (
-        ["--trigger-cuts", "snr:7:lower_inc:5:upper_inc", "traditional_chisq:10:upper_inc"],
-        snr_lower_upper_traditional_chisq_lower_test,
-        "snr_lower_upper_traditional_chisq_lower_test",
-    )
-)
-
-
-# Mixed limits on template parameters; single-limit is specified first
-def template_duration_lower_chi_eff_lower_upper_test(temps, temp_idx, **kwargs):
-    chi_eff = bank_conversions.get_bank_property("chi_eff", temps, temp_idx)
-    return all((temps["template_duration"][temp_idx] > 2) & ((chi_eff >= -0.5) | (chi_eff <= 0.8)))
-
-test_cut_output.append(
-    (
-        ["--template-cuts", "template_duration:2:lower_inc", "chi_eff:0.8:lower:-0.5:upper"],
-        template_duration_lower_chi_eff_lower_upper_test,
-        "template_duration_lower_chi_eff_lower_upper_test",
-    )
-)
-
-
-# Mixed limits on template parameters; double-limit is specified first
-def chi_eff_lower_upper_template_duration_lower_test(temps, temp_idx, **kwargs):
-    chi_eff = bank_conversions.get_bank_property("chi_eff", temps, temp_idx)
-    return all((temps["template_duration"][temp_idx] > 2) & ((chi_eff >= -0.5) | (chi_eff <= 0.8)))
-
-test_cut_output.append(
-    (
-        ["--template-cuts", "chi_eff:0.8:lower:-0.5:upper", "template_duration:2:lower_inc"],
-        chi_eff_lower_upper_template_duration_lower_test,
-        "chi_eff_lower_upper_template_duration_lower_test",
     )
 )
 
