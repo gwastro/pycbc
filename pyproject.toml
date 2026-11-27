@@ -23,6 +23,10 @@ graphviz = "*"
 [tool.pixi.pypi-dependencies]
 coverage = "*"
 pycbc = { path = ".", editable = true, extras = ["test"] }
+# Direct URL dependencies from companion.txt. These cannot be part of the
+# package's "test" extra, as PyPI rejects such metadata (gwastro/pycbc#5565).
+ptemcee = { url = "https://github.com/willvousden/ptemcee/archive/master.tar.gz" }
+awkde = { git = "https://github.com/mennthor/awkde.git", rev = "5b601fe4d92229d5deb8737fd121dce193bac552" }
 
 [tool.pixi.environments]
 default = { features = ["bbhx"], solve-group = "default" }

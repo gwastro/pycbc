@@ -197,13 +197,23 @@ extras_require = {
 
 
 def get_reqs_from_file(filename):
+    """Read requirements from a pip requirements file.
+
+    Direct URL references (``pkg @ https://...``) are skipped, because PyPI
+    rejects uploads whose metadata contains them (see gwastro/pycbc#5565).
+    Such packages must be provided separately, e.g. via
+    ``[tool.pixi.pypi-dependencies]`` in pyproject.toml.
+    """
     reqs = []
     if os.path.exists(filename):
         with open(filename) as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith("#") and not line.startswith("--"):
-                    reqs.append(line)
+                if not line or line.startswith(("#", "--")):
+                    continue
+                if " @ " in line or "://" in line:
+                    continue
+                reqs.append(line)
     return reqs
 
 
