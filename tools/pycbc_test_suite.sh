@@ -7,6 +7,10 @@ echo -e "\\n>> [`date`] Python Major Version:" $PYTHON_VERSION
 PYTHON_MINOR_VERSION=`python -c 'import sys; print(sys.version_info.minor)'`
 echo -e "\\n>> [`date`] Python Minor Version:" $PYTHON_MINOR_VERSION
 
+echo -e "\\n>> [`date`] ----------------- pixi list -----------------"
+pixi list
+echo -e "\\n>> [`date`] ---------------------------------------------"
+
 # This will work from anywhere within the pycbc directory
 this_script_dir=`dirname -- "$( readlink -f -- "$0"; )"`
 cd $this_script_dir
